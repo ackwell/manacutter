@@ -4,9 +4,8 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
-if (builder.Environment.IsDevelopment())
-{
-    app.UseDeveloperExceptionPage();
+if (builder.Environment.IsDevelopment()) {
+	app.UseDeveloperExceptionPage();
 }
 
 app.UseHttpsRedirection();
