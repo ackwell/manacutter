@@ -6,4 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Lumina" Version="3.3.0" />
+  </ItemGroup>
+
 </Project>
