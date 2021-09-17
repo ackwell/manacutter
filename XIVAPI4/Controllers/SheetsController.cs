@@ -9,10 +9,8 @@ namespace XIVAPI4.Controllers;
 public class SheetsController : ControllerBase {
 	private GameData lumina;
 
-	public SheetsController() {
-		// TODO: configurable data path
-		// TODO: lumina should be reg'd as a service i guess
-		this.lumina = new GameData("C:\\Program Files (x86)\\SquareEnix\\FINAL FANTASY XIV - A Realm Reborn\\game\\sqpack");
+	public SheetsController(GameData lumina) {
+		this.lumina = lumina;
 	}
 
 	[HttpGet]
