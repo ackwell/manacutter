@@ -1,14 +1,20 @@
 ﻿using Lumina;
 using Microsoft.AspNetCore.Mvc;
+using XIVAPI4.Services.SheetDefinitions;
 
 namespace XIVAPI4.Controllers;
 
 [Route("[controller]")]
 [ApiController]
 public class SheetsController : ControllerBase {
+	private IEnumerable<ISheetDefinitionProvider> definitionProviders;
 	private GameData lumina;
 
-	public SheetsController(GameData lumina) {
+	public SheetsController(
+		IEnumerable<ISheetDefinitionProvider> definitionProviders,
+		GameData lumina
+	) {
+		this.definitionProviders = definitionProviders;
 		this.lumina = lumina;
 	}
 
@@ -29,37 +35,18 @@ public class SheetsController : ControllerBase {
 			return this.Problem($"Sheet \"{sheetName}\" does not contain an entry for requested rowId {rowId}.", statusCode: StatusCodes.Status400BadRequest);
 		}
 
-		// This is _very_ temp.
-		var assemblyLocation = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-		if (assemblyLocation is null) { throw new Exception("Shit's fucked"); }
-		var rawDefinition = await System.IO.File.ReadAllTextAsync(Path.Combine(assemblyLocation, "Controllers", "temp-action-def.json"));
-		var sheetDefinition = System.Text.Json.JsonSerializer.Deserialize<CoinachSheetDefinition>(
-			rawDefinition,
-			new System.Text.Json.JsonSerializerOptions {
-				PropertyNamingPolicy=System.Text.Json.JsonNamingPolicy.CamelCase
-			}
-		);
+		// TODO: lookup properly
+		var definitionProvider = this.definitionProviders.First();
+		var sheetDefinition = definitionProvider.GetDefinition(sheetName);
 
 		// TODO: Not sure how to do this "properly" in C#/ASP.
 		var output = new Dictionary<string, object>();
-		foreach (var rowDefinition in sheetDefinition.Definitions) {
-			output.Add(rowDefinition.Name, rowParser.ReadColumnRaw((int?)rowDefinition.Index ?? 0).ToString() ?? "oops!");
+		foreach (var rowDefinition in sheetDefinition.Columns) {
+			output.Add(rowDefinition.Name, rowParser.ReadColumnRaw((int)rowDefinition.Index).ToString() ?? "oops!");
 		}
+
+		output.Add("DEFINITION", sheetDefinition);
 
 		return this.Ok(output);
 	}
 }
-
-// temp
-#pragma warning disable CS8618
-class CoinachColumnDefinition {
-	public uint? Index { get; set; }
-	public string Name { get; set; }
-}
-
-class CoinachSheetDefinition {
-	public string Sheet { get; set; }
-	public string DefaultColumn { get; set; }
-	public List<CoinachColumnDefinition> Definitions { get; set; }
-}
-#pragma warning restore CS8618

@@ -6,6 +6,8 @@ builder.Services.AddControllers();
 var lumina = new Lumina.GameData("C:\\Program Files (x86)\\SquareEnix\\FINAL FANTASY XIV - A Realm Reborn\\game\\sqpack");
 builder.Services.AddSingleton(lumina);
 
+builder.Services.AddSheetDefinitionProviders();
+
 var app = builder.Build();
 
 if (builder.Environment.IsDevelopment()) {
