@@ -1,4 +1,5 @@
 ﻿using XIVAPI4.Services.SheetDefinitions;
+using XIVAPI4.Services.SheetDefinitions.SaintCoinach;
 
 namespace Microsoft.Extensions.DependencyInjection;
 

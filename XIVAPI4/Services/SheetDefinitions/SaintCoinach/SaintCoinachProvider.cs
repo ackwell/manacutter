@@ -1,9 +1,8 @@
 ﻿using Microsoft.Extensions.Options;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Git = LibGit2Sharp;
 
-namespace XIVAPI4.Services.SheetDefinitions;
+namespace XIVAPI4.Services.SheetDefinitions.SaintCoinach;
 
 public class SaintCoinachOptions {
 	public const string Name = "SaintCoinach";
@@ -51,8 +50,6 @@ public class SaintCoinachProvider : ISheetDefinitionProvider, IDisposable {
 		}
 
 		this.repository = new Git.Repository(repositoryPath);
-
-		return;
 	}
 
 	public void Dispose() {
@@ -113,10 +110,7 @@ class CoinachSheetDefinition : ISheetDefinition {
 }
 
 class CoinachColumnDefinition : IColumnDefinition {
-	[JsonPropertyName("index")]
-	public uint? MaybeIndex { get; set; }
-	[JsonIgnore]
-	public uint Index => this.MaybeIndex ?? 0;
+	public uint Index { get; set; } = 0;
 
 	public string Name { get; set; }
 }
