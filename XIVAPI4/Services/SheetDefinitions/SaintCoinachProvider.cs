@@ -8,9 +8,15 @@ namespace XIVAPI4.Services.SheetDefinitions;
 public class SaintCoinachProvider : ISheetDefinitionProvider {
 	public string Name => "saint-coinach";
 
+	private readonly ILogger logger;
+
 	public SaintCoinachProvider(
 		ILogger<SaintCoinachProvider> logger
 	) {
+		this.logger = logger;
+	}
+
+	public async Task Initialize() {
 		// I have no idea what I'm doing
 		// TODO: Seriously, do this properly.
 		// TODO: Clone should probably be done in a task or something.
@@ -33,7 +39,7 @@ public class SaintCoinachProvider : ISheetDefinitionProvider {
 		// TODO: I should probably implement IDisposeable for this provider. Look into docs w/r/t disp on DI.
 		using var repository = new Git.Repository(repositoryPath);
 		var commit = repository
-			.Lookup("594bc5391a640eee3be89d8bc6e22f30c460dfb8", Git.ObjectType.Commit)
+			.Lookup("594bc53", Git.ObjectType.Commit)
 			?.Peel<Git.Commit>();
 
 		if (commit is null) {

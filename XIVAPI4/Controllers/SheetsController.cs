@@ -8,8 +8,8 @@ namespace XIVAPI4.Controllers;
 [Route("[controller]")]
 [ApiController]
 public class SheetsController : ControllerBase {
-	private IEnumerable<ISheetDefinitionProvider> definitionProviders;
-	private GameData lumina;
+	private readonly IEnumerable<ISheetDefinitionProvider> definitionProviders;
+	private readonly GameData lumina;
 
 	public SheetsController(
 		IEnumerable<ISheetDefinitionProvider> definitionProviders,

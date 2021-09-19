@@ -3,6 +3,7 @@
 public interface ISheetDefinitionProvider {
 	public string Name { get; }
 
+	public Task Initialize();
 	public ISheetDefinition GetDefinition(string sheet);
 }
 
