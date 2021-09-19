@@ -1,4 +1,5 @@
 ﻿using Lumina;
+using Lumina.Data.Structs.Excel;
 using Microsoft.AspNetCore.Mvc;
 using XIVAPI4.Services.SheetDefinitions;
 
@@ -24,7 +25,7 @@ public class SheetsController : ControllerBase {
 	}
 
 	[HttpGet("{sheetName}/{rowId}")]
-	public async Task<IActionResult> GetRow(string sheetName, uint rowId) {
+	public IActionResult GetRow(string sheetName, uint rowId) {
 		var sheet = lumina.Excel.GetSheetRaw(sheetName);
 		if (sheet is null) {
 			return this.Problem($"Requested sheet \"{sheetName}\" could not be found.", statusCode: StatusCodes.Status400BadRequest);
@@ -42,7 +43,12 @@ public class SheetsController : ControllerBase {
 		// TODO: Not sure how to do this "properly" in C#/ASP.
 		var output = new Dictionary<string, object>();
 		foreach (var rowDefinition in sheetDefinition.Columns) {
-			output.Add(rowDefinition.Name, rowParser.ReadColumnRaw((int)rowDefinition.Index).ToString() ?? "oops!");
+			var value = rowParser.ReadColumnRaw((int)rowDefinition.Index);
+			// TODO: Will probably need slightly more involved logic for SeString in the long run.
+			if (sheet.Columns[rowDefinition.Index].Type == ExcelColumnDataType.String) {
+				value = value.ToString();
+			}
+			output.Add(rowDefinition.Name, value ?? "oops!");
 		}
 
 		output.Add("DEFINITION", sheetDefinition);

@@ -32,7 +32,7 @@ public class SaintCoinachProvider : ISheetDefinitionProvider {
 }
 
 // temp
-#pragma warning disable CS0649, CS8618
+#pragma warning disable CS8618
 class CoinachSheetDefinition : ISheetDefinition {
 	public List<CoinachColumnDefinition> Definitions { get; set; }
 
@@ -47,4 +47,4 @@ class CoinachColumnDefinition : IColumnDefinition {
 
 	public string Name { get; set; }
 }
-#pragma warning restore CS0649, CS8618
+#pragma warning restore CS8618
