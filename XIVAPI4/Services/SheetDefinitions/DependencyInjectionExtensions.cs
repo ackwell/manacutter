@@ -3,7 +3,8 @@
 namespace Microsoft.Extensions.DependencyInjection;
 
 public static class SheetDefinitionServiceExtensions {
-	public static IServiceCollection AddSheetDefinitionProviders(this IServiceCollection services) {
+	public static IServiceCollection AddSheetDefinitionProviders(this IServiceCollection services, IConfiguration configuration) {
+		services.Configure<SaintCoinachOptions>(configuration.GetSection(SaintCoinachOptions.Name));
 		services.AddSingleton<ISheetDefinitionProvider, SaintCoinachProvider>();
 
 		services.AddHostedService<SheetDefinitionHostedService>();

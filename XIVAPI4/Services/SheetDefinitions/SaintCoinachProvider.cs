@@ -1,78 +1,75 @@
-﻿using Git = LibGit2Sharp;
-using System.Reflection;
+﻿using Microsoft.Extensions.Options;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Git = LibGit2Sharp;
 
 namespace XIVAPI4.Services.SheetDefinitions;
 
-public class SaintCoinachProvider : ISheetDefinitionProvider {
+public class SaintCoinachOptions {
+	public const string Name = "SaintCoinach";
+
+	public string Repository { get; set; } = "";
+	public string Directory { get; set; } = $"./{Name}";
+}
+
+public class SaintCoinachProvider : ISheetDefinitionProvider, IDisposable {
 	public string Name => "saint-coinach";
 
+	private Git.Repository? repository;
+
 	private readonly ILogger logger;
+	private readonly SaintCoinachOptions options;
+	private readonly IHostEnvironment hostEnvironment;
 
 	public SaintCoinachProvider(
-		ILogger<SaintCoinachProvider> logger
+		ILogger<SaintCoinachProvider> logger,
+		IOptions<SaintCoinachOptions> options,
+		IHostEnvironment hostEnvironment
 	) {
 		this.logger = logger;
+		this.options = options.Value;
+		this.hostEnvironment = hostEnvironment;
 	}
 
+	// TODO: This should probably have some recurring task to fetch from origin.
 	public async Task Initialize() {
-		// I have no idea what I'm doing
-		// TODO: Seriously, do this properly.
-		// TODO: Clone should probably be done in a task or something.
-		// TODO: Looks like this is instantiated lazily, which means this will chunk time off first request rather than boot. Fix. Probably should be a seperate init method.
-		var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-		if (assemblyLocation is null) { throw new Exception("Shit's fucked"); }
-		logger.LogWarning("test");
+		// Work out the path the repository is configured to.
+		var repositoryPath = options.Directory;
+		if (!Path.IsPathFullyQualified(repositoryPath)) {
+			repositoryPath = Path.GetFullPath(repositoryPath, this.hostEnvironment.ContentRootPath);
+		}
+		logger.LogInformation($"Repository path: {repositoryPath}");
 
-		var repositoryPath = Path.Combine(assemblyLocation, "temp-coinach");
+		// If no repository is available at the configured path, clone it down.
 		if (!Directory.Exists(repositoryPath)) {
-			logger.LogWarning($"test2 {repositoryPath}");
-			Git.Repository.Clone(
-				"https://github.com/xivapi/SaintCoinach.git",
+			logger.LogInformation("Cloning");
+			await Task.Run(() => Git.Repository.Clone(
+				options.Repository,
 				repositoryPath,
 				new Git.CloneOptions { IsBare = true }
-			);
-			logger.LogWarning("test3");
+			));
 		}
 
-		// TODO: I should probably implement IDisposeable for this provider. Look into docs w/r/t disp on DI.
-		using var repository = new Git.Repository(repositoryPath);
-		var commit = repository
-			.Lookup("594bc53", Git.ObjectType.Commit)
-			?.Peel<Git.Commit>();
+		this.repository = new Git.Repository(repositoryPath);
 
-		if (commit is null) {
-			logger.LogWarning("commit missing");
-			return;
-		}
+		return;
+	}
 
-		// TODO: Will probably need to compute a list of sheet names -> file names ahead of time.
-		var treeEntry = commit["SaintCoinach/Definitions/AirshipExplorationPoint.json"];
-		if (treeEntry is null) {
-			logger.LogWarning("file missing");
-			return;
-		}
-		var blob = treeEntry.Target.Peel<Git.Blob>();
-		// TODO: Probably should be using streams or something.
-		var content = blob.GetContentText();
-		logger.LogWarning(content);
+	public void Dispose() {
+		this.repository?.Dispose();
 	}
 
 	public ISheetDefinition GetDefinition(string sheet) {
-		// TODO: Do this properly.
-		var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-		if (assemblyLocation is null) { throw new Exception("Shit's fucked"); }
+		// TODO: ref should probably come from controller in some manner.
+		var definitionJson = this.GetDefinitionJSON(sheet, "HEAD");
 
-		var path = Path.Combine(new[] {
-			assemblyLocation,
-			"Services",
-			"SheetDefinitions",
-			"temp-action-def.json"
-		});
+		// TODO: this, properly.
+		if (definitionJson is null) {
+			throw new Exception($"couldn't find def");
+		}
 
 		var sheetDefinition = JsonSerializer.Deserialize<CoinachSheetDefinition>(
-			File.ReadAllText(path),
+			definitionJson,
 			new JsonSerializerOptions {
 				PropertyNamingPolicy = JsonNamingPolicy.CamelCase
 			}
@@ -80,6 +77,30 @@ public class SaintCoinachProvider : ISheetDefinitionProvider {
 
 		// TODO: Null handling
 		return sheetDefinition;
+	}
+
+	// TOOD: Clean up this function a lot.
+	private string? GetDefinitionJSON(string sheet, string reference) {
+		var commit = repository?
+			.Lookup(reference, Git.ObjectType.Commit)?
+			.Peel<Git.Commit>();
+
+		if (commit is null) {
+			logger.LogWarning("commit missing");
+			return null;
+		}
+
+		// TODO: This will have casing issues &c. Will probably want to cache sheet (lower) -> filename per ref.
+		var treeEntry = commit[$"SaintCoinach/Definitions/{sheet}.json"];
+		if (treeEntry is null) {
+			logger.LogWarning("file missing");
+			return null;
+		}
+
+		var blob = treeEntry.Target.Peel<Git.Blob>();
+		// TODO: Probably should be using streams or something.
+		var content = blob.GetContentText();
+		return content;
 	}
 }
 

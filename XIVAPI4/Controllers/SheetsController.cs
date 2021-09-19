@@ -48,7 +48,7 @@ public class SheetsController : ControllerBase {
 			if (sheet.Columns[rowDefinition.Index].Type == ExcelColumnDataType.String) {
 				value = value.ToString();
 			}
-			output.Add(rowDefinition.Name, value ?? "oops!");
+			output.Add(rowDefinition.Name ?? "SOMETHING FUCKY", value ?? "oops!");
 		}
 
 		output.Add("DEFINITION", sheetDefinition);
