@@ -99,6 +99,39 @@ public class SaintCoinachProvider : ISheetDefinitionProvider, IDisposable {
 		var content = blob.GetContentText();
 		return content;
 	}
+
+	public ISheetReader GetReader(string sheet) {
+		// TODO: the results of this should probably be cached in some manner
+		// TODO: ref should probably come from controller in some manner.
+		// TODO: most of the json reading should just be put in this call
+		var definitionJson = this.GetDefinitionJSON(sheet, "HEAD");
+
+		// TODO: this, properly.
+		if (definitionJson is null) {
+			throw new Exception($"couldn't find def");
+		}
+
+		var sheetDefinition = JsonSerializer.Deserialize<SheetDefinition>(
+			definitionJson,
+			new JsonSerializerOptions {
+				PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+			}
+		);
+
+		// TODO: this, properly.
+		if (sheetDefinition is null) {
+			throw new Exception($"couldn't find def");
+		}
+
+		// TODO: Proper recursive handling
+		var fields = new Dictionary<string, ISheetReader>();
+		foreach (var column in sheetDefinition.Definitions) {
+			fields.Add(column.Name ?? "TODO", new ScalarReader() {
+				Index = column.Index,
+			});
+		}
+		return new StructReader(fields);
+	}
 }
 
 // temp

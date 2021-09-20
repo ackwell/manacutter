@@ -39,6 +39,9 @@ public class SheetsController : ControllerBase {
 		// TODO: lookup properly
 		var definitionProvider = this.definitionProviders.First();
 		var sheetDefinition = definitionProvider.GetDefinition(sheetName);
+		var sheetReader = definitionProvider.GetReader(sheetName);
+
+		return this.Ok(sheetReader.Read(rowParser));
 
 		// TODO: Not sure how to do this "properly" in C#/ASP.
 		var output = new Dictionary<string, object>();
