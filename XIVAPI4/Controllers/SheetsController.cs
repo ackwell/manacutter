@@ -38,24 +38,8 @@ public class SheetsController : ControllerBase {
 
 		// TODO: lookup properly
 		var definitionProvider = this.definitionProviders.First();
-		var sheetDefinition = definitionProvider.GetDefinition(sheetName);
 		var sheetReader = definitionProvider.GetReader(sheetName);
 
 		return this.Ok(sheetReader.Read(rowParser));
-
-		// TODO: Not sure how to do this "properly" in C#/ASP.
-		var output = new Dictionary<string, object>();
-		foreach (var rowDefinition in sheetDefinition.Columns) {
-			var value = rowParser.ReadColumnRaw((int)rowDefinition.Index);
-			// TODO: Will probably need slightly more involved logic for SeString in the long run.
-			if (sheet.Columns[rowDefinition.Index].Type == ExcelColumnDataType.String) {
-				value = value.ToString();
-			}
-			output.Add(rowDefinition.Name ?? "SOMETHING FUCKY", value ?? "oops!");
-		}
-
-		output.Add("DEFINITION", sheetDefinition);
-
-		return this.Ok(output);
 	}
 }

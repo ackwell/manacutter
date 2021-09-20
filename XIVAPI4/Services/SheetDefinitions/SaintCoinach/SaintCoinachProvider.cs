@@ -56,72 +56,10 @@ public class SaintCoinachProvider : ISheetDefinitionProvider, IDisposable {
 		this.repository?.Dispose();
 	}
 
-	public ISheetDefinition GetDefinition(string sheet) {
-		// TODO: ref should probably come from controller in some manner.
-		var definitionJson = this.GetDefinitionJSON(sheet, "HEAD");
-
-		// TODO: this, properly.
-		if (definitionJson is null) {
-			throw new Exception($"couldn't find def");
-		}
-
-		var sheetDefinition = JsonSerializer.Deserialize<CoinachSheetDefinition>(
-			definitionJson,
-			new JsonSerializerOptions {
-				PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-			}
-		);
-
-		// TODO: Null handling
-		return sheetDefinition;
-	}
-
-	// TOOD: Clean up this function a lot.
-	private string? GetDefinitionJSON(string sheet, string reference) {
-		var commit = repository?
-			.Lookup(reference, Git.ObjectType.Commit)?
-			.Peel<Git.Commit>();
-
-		if (commit is null) {
-			logger.LogWarning("commit missing");
-			return null;
-		}
-
-		// TODO: This will have casing issues &c. Will probably want to cache sheet (lower) -> filename per ref.
-		var treeEntry = commit[$"SaintCoinach/Definitions/{sheet}.json"];
-		if (treeEntry is null) {
-			logger.LogWarning("file missing");
-			return null;
-		}
-
-		var blob = treeEntry.Target.Peel<Git.Blob>();
-		// TODO: Probably should be using streams or something.
-		var content = blob.GetContentText();
-		return content;
-	}
-
+	// TODO: the results of this function should probably be cached in some manner
 	public ISheetReader GetReader(string sheet) {
-		// TODO: the results of this should probably be cached in some manner
 		// TODO: ref should probably come from controller in some manner.
-		// TODO: most of the json reading should just be put in this call
-		var definitionJson = this.GetDefinitionJSON(sheet, "HEAD");
-
-		// TODO: this, properly.
-		if (definitionJson is null) {
-			throw new Exception($"couldn't find def");
-		}
-
-		var sheetDefinition = JsonSerializer.Deserialize<SheetDefinition>(
-			definitionJson,
-			new JsonSerializerOptions {
-				PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-			}
-		);
-
-		// TODO: this, properly.
-		if (sheetDefinition is null) {
-			throw new Exception($"couldn't find def");
-		}
+		var sheetDefinition = this.GetDefinition(sheet, "HEAD");
 
 		// TODO: Proper recursive handling
 		var fields = new Dictionary<string, ISheetReader>();
@@ -130,21 +68,45 @@ public class SaintCoinachProvider : ISheetDefinitionProvider, IDisposable {
 				Index = column.Index,
 			});
 		}
+
 		return new StructReader(fields);
 	}
+
+	private SheetDefinition GetDefinition(string sheet, string reference) {
+		var commit = repository?
+			.Lookup(reference, Git.ObjectType.Commit)?
+			.Peel<Git.Commit>();
+
+		if (commit is null) {
+			throw new ArgumentException($"Commit reference {reference} could not be resolved.");
+		}
+
+		// TODO: This will have casing issues &c. Will probably want to cache sheet (lower) -> filename per ref.
+		// TODO: If we go back far enough, the coinach definitions were one massive json file - do we give a shit?
+		// TODO: Is it worth checking the name field in the json files or is it always the same? Check coinach src I guess.
+		var content = commit
+			[$"SaintCoinach/Definitions/{sheet}.json"]?
+			.Target
+			.Peel<Git.Blob>()
+			// TODO: Probably should be using streams or something.
+			.GetContentText();
+
+		if (content is null) {
+			throw new ArgumentException($"Could not find definition for sheet {sheet} at commit {reference}.");
+		}
+
+		var sheetDefinition = JsonSerializer.Deserialize<SheetDefinition>(
+			content,
+			new JsonSerializerOptions {
+				PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+			}
+		);
+
+		// TODO: What error should this even be idfk.
+		if (sheetDefinition is null) {
+			throw new Exception($"Could not deserialize sheet {sheet} at commit {reference}.");
+		}
+
+		return sheetDefinition;
+	}
 }
-
-// temp
-#pragma warning disable CS8618
-class CoinachSheetDefinition : ISheetDefinition {
-	public List<CoinachColumnDefinition> Definitions { get; set; }
-
-	public IEnumerable<IColumnDefinition> Columns => this.Definitions;
-}
-
-class CoinachColumnDefinition : IColumnDefinition {
-	public uint Index { get; set; } = 0;
-
-	public string Name { get; set; }
-}
-#pragma warning restore CS8618
