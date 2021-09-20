@@ -1,5 +1,4 @@
 ﻿using Lumina;
-using Lumina.Data.Structs.Excel;
 using Microsoft.AspNetCore.Mvc;
 using XIVAPI4.Services.SheetDefinitions;
 
