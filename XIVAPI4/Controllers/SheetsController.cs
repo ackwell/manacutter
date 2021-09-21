@@ -25,7 +25,7 @@ public class SheetsController : ControllerBase {
 
 	[HttpGet("{sheetName}/{rowId}")]
 	public IActionResult GetRow(string sheetName, uint rowId) {
-		var sheet = lumina.Excel.GetSheetRaw(sheetName);
+		var sheet = this.lumina.Excel.GetSheetRaw(sheetName);
 		if (sheet is null) {
 			return this.Problem($"Requested sheet \"{sheetName}\" could not be found.", statusCode: StatusCodes.Status400BadRequest);
 		}

@@ -1,11 +1,16 @@
-﻿using Lumina.Data.Structs.Excel;
+﻿using GraphQL.Types;
+using Lumina.Data.Structs.Excel;
 using Lumina.Excel;
 
 namespace XIVAPI4.Services.SheetDefinitions;
 
 // TODO: I really don't know where all this should go tbh.
 public interface ISheetReader {
+	// TODO: I'd like to abstract lumina lookup logic, too
 	public object Read(RowParser rowParser);
+
+	// TODO: All GQL logic should be colocated, I'm not a fan of it cluttering up this file.
+	public GraphType BuildGraph(RowParser rowParser);
 }
 
 public class StructReader : ISheetReader {
@@ -25,6 +30,23 @@ public class StructReader : ISheetReader {
 		}
 		return output;
 	}
+
+	public GraphType BuildGraph(RowParser rowParser) {
+		var type = new ObjectGraphType();
+		foreach (var field in fields) {
+			// TODO: lmao
+			var name = field.Key
+				.Replace('{', '_').Replace('}', '_')
+				.Replace('<', '_').Replace('>', '_');
+
+			type.Field(
+				name,
+				field.Value.BuildGraph(rowParser),
+				resolve: ctx => field.Value.Read(rowParser).ToString()
+			);
+		}
+		return type;
+	}
 }
 
 public class ScalarReader : ISheetReader {
@@ -39,5 +61,9 @@ public class ScalarReader : ISheetReader {
 			value = value.ToString()!;
 		}
 		return value;
+	}
+
+	public GraphType BuildGraph(RowParser rowParser) {
+		return new StringGraphType();
 	}
 }
