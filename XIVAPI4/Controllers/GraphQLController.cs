@@ -3,6 +3,7 @@ using GraphQL.Types;
 using GraphQL.SystemTextJson;
 using Lumina;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 using XIVAPI4.Services.SheetDefinitions;
 
 namespace XIVAPI4.Controllers;
@@ -54,6 +55,7 @@ public class GraphQLController : ControllerBase {
 
 		var json = await schema.ExecuteAsync(_ => {
 			_.Query = request?.Query;
+			_.Inputs = request?.Variables.ToInputs();
 		});
 
 		return this.Ok(json);
@@ -63,4 +65,5 @@ public class GraphQLController : ControllerBase {
 // TODO: yikes
 public class GraphQLRequest {
 	public string Query { get; set; } = "";
+	public JsonElement Variables { get; set; }
 }
