@@ -1,4 +1,5 @@
-﻿using GraphQL.Types;
+﻿using GraphQL;
+using GraphQL.Types;
 using Lumina.Data.Structs.Excel;
 using Lumina.Excel;
 
@@ -43,7 +44,12 @@ public class StructReader : ISheetReader {
 				name,
 				field.Value.BuildGraph(sheet),
 				// TODO: read field from somewhere and decouple and shit and so forth
-				resolve: ctx => field.Value.Read(sheet.GetRowParser(7518))
+				// TODO: shouldn't be fetching the row parser at the struct level, as there may be substructs. rethink that.
+				resolve: context => {
+					// TODO: yikes
+					var id = ((Dictionary<string, uint>)context.Source)["id"];
+					return field.Value.Read(sheet.GetRowParser(id));
+				}
 			);
 		}
 		return type;
