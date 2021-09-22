@@ -10,7 +10,7 @@ public interface ISheetReader {
 	public object Read(RowParser rowParser);
 
 	// TODO: All GQL logic should be colocated, I'm not a fan of it cluttering up this file.
-	public GraphType BuildGraph(RowParser rowParser);
+	public GraphType BuildGraph(ExcelSheetImpl sheet);
 }
 
 public class StructReader : ISheetReader {
@@ -31,7 +31,7 @@ public class StructReader : ISheetReader {
 		return output;
 	}
 
-	public GraphType BuildGraph(RowParser rowParser) {
+	public GraphType BuildGraph(ExcelSheetImpl sheet) {
 		var type = new ObjectGraphType();
 		foreach (var field in fields) {
 			// TODO: lmao
@@ -41,8 +41,9 @@ public class StructReader : ISheetReader {
 
 			type.Field(
 				name,
-				field.Value.BuildGraph(rowParser),
-				resolve: ctx => field.Value.Read(rowParser).ToString()
+				field.Value.BuildGraph(sheet),
+				// TODO: read field from somewhere and decouple and shit and so forth
+				resolve: ctx => field.Value.Read(sheet.GetRowParser(7518))
 			);
 		}
 		return type;
@@ -63,7 +64,43 @@ public class ScalarReader : ISheetReader {
 		return value;
 	}
 
-	public GraphType BuildGraph(RowParser rowParser) {
-		return new StringGraphType();
+	public GraphType BuildGraph(ExcelSheetImpl sheet) {
+		// same issue as other index thing. resolve.
+		var index = this.Index ?? 0;
+		switch (sheet.Columns[index].Type) {
+			case ExcelColumnDataType.String:
+				return new StringGraphType();
+			case ExcelColumnDataType.Bool:
+			case ExcelColumnDataType.PackedBool0:
+			case ExcelColumnDataType.PackedBool1:
+			case ExcelColumnDataType.PackedBool2:
+			case ExcelColumnDataType.PackedBool3:
+			case ExcelColumnDataType.PackedBool4:
+			case ExcelColumnDataType.PackedBool5:
+			case ExcelColumnDataType.PackedBool6:
+			case ExcelColumnDataType.PackedBool7:
+				return new BooleanGraphType();
+			case ExcelColumnDataType.Int8:
+				return new SByteGraphType();
+			case ExcelColumnDataType.UInt8:
+				return new ByteGraphType();
+			case ExcelColumnDataType.Int16:
+				return new ShortGraphType();
+			case ExcelColumnDataType.UInt16:
+				return new UShortGraphType();
+			case ExcelColumnDataType.Int32:
+				return new IntGraphType();
+			case ExcelColumnDataType.UInt32:
+				return new UIntGraphType();
+			case ExcelColumnDataType.Int64:
+				return new LongGraphType();
+			case ExcelColumnDataType.UInt64:
+				return new ULongGraphType();
+			case ExcelColumnDataType.Float32:
+				return new FloatGraphType();
+			default:
+				// TODO: dunno
+				return new StringGraphType();
+		}
 	}
 }

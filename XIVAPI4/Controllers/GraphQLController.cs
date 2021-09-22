@@ -27,18 +27,17 @@ public class GraphQLController : ControllerBase {
 	public async Task<IActionResult> Get([FromBody] GraphQLRequest request) {
 		// this makes two places that need to do all this lookup stuff
 		var sheet = this.lumina.Excel.GetSheetRaw("Action");
-		var rowParser = sheet.GetRowParser(7518);
 		var definitionProvider = this.definitionProviders.First();
 		var sheetReader = definitionProvider.GetReader("Action");
 
-		var graph = sheetReader.BuildGraph(rowParser);
+		var graph = sheetReader.BuildGraph(sheet);
 		var schema = new Schema() {
+			// TODO: top level schema should be composed from multiple sheets with pagination and shit
 			Query = (ObjectGraphType)graph
 		};
 
 		var json = await schema.ExecuteAsync(_ => {
 			_.Query = request?.Query;
-			_.Root = new { Hello = "world" };
 		});
 
 		return this.Ok(json);
