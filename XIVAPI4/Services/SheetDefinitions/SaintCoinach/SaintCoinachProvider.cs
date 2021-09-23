@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
 using System.Text.Json;
 using Git = LibGit2Sharp;
+using XIVAPI4.Types;
 
 namespace XIVAPI4.Services.SheetDefinitions.SaintCoinach;
 
@@ -54,6 +55,22 @@ public class SaintCoinachProvider : ISheetDefinitionProvider, IDisposable {
 
 	public void Dispose() {
 		this.repository?.Dispose();
+	}
+
+	// TODO: the results of this function should probably be cached in some manner
+	public SheetNode GetRootNode(string sheet) {
+		// TODO: ref should probably come from controller in some manner.
+		var sheetDefinition = this.GetDefinition(sheet, "HEAD");
+
+		// TODO: Proper recursive handling
+		var fields = new Dictionary<string, SheetNode>();
+		foreach (var column in sheetDefinition.Definitions) {
+			fields.Add(column.Name ?? "TODO", new ScalarNode() {
+				Index = column.Index,
+			});
+		}
+
+		return new StructNode(fields);
 	}
 
 	// TODO: the results of this function should probably be cached in some manner
