@@ -56,7 +56,7 @@ public class LuminaSheetReader : ISheetReader {
 		this.rowParser = rowParser;
 	}
 
-	public object Read(SheetNode node) {
+	public object Read(DataNode node) {
 		return node switch { 
 			StructNode structNode => this.ReadStruct(structNode),
 			ScalarNode scalarNode => this.ReadScalar(scalarNode),

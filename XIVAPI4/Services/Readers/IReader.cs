@@ -14,5 +14,5 @@ public interface ISheetReader {
 
 public interface IRowReader {
 	// TODO: Should we have an explicit output type?
-	public object Read(SheetNode node);
+	public object Read(DataNode node);
 }

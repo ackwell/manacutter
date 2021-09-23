@@ -58,12 +58,12 @@ public class SaintCoinachProvider : ISheetDefinitionProvider, IDisposable {
 	}
 
 	// TODO: the results of this function should probably be cached in some manner
-	public SheetNode GetRootNode(string sheet) {
+	public DataNode GetRootNode(string sheet) {
 		// TODO: ref should probably come from controller in some manner.
 		var sheetDefinition = this.GetDefinition(sheet, "HEAD");
 
 		// TODO: Proper recursive handling
-		var fields = new Dictionary<string, SheetNode>();
+		var fields = new Dictionary<string, DataNode>();
 		foreach (var column in sheetDefinition.Definitions) {
 			fields.Add(column.Name ?? "TODO", new ScalarNode() {
 				Index = column.Index,
