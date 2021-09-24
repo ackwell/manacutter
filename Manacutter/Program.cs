@@ -3,10 +3,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 builder.Services
+	.AddDefinitions(builder.Configuration)
 	.AddGraphQL()
 	.AddReaders();
-
-builder.Services.AddSheetDefinitionProviders(builder.Configuration);
 
 // TODO: Make this more granular.
 builder.Services.AddCors(options => {

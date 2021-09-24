@@ -2,30 +2,14 @@
 using Manacutter.Services.Definitions.SaintCoinach;
 
 namespace Microsoft.Extensions.DependencyInjection {
-	public static class SheetDefinitionServiceExtensions {
-		public static IServiceCollection AddSheetDefinitionProviders(this IServiceCollection services, IConfiguration configuration) {
+	public static class DefinitionServiceExtensions {
+		public static IServiceCollection AddDefinitions(this IServiceCollection services, IConfiguration configuration) {
 			services.Configure<SaintCoinachOptions>(configuration.GetSection(SaintCoinachOptions.Name));
 			services.AddSingleton<IDefinitionProvider, SaintCoinachProvider>();
 
-			services.AddHostedService<SheetDefinitionHostedService>();
+			services.AddHostedService<DefinitionHostedService>();
 
 			return services;
 		}
-	}
-}
-
-namespace Manacutter.Services.Definitions {
-	internal class SheetDefinitionHostedService : IHostedService {
-		private readonly IServiceProvider serviceProvider;
-		public SheetDefinitionHostedService(IServiceProvider serviceProvider) {
-			this.serviceProvider = serviceProvider;
-		}
-
-		public Task StartAsync(CancellationToken cancellationToken) {
-			var providers = this.serviceProvider.GetRequiredService<IEnumerable<IDefinitionProvider>>();
-			return Task.WhenAll(providers.Select(provider => provider.Initialize()));
-		}
-
-		public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 	}
 }
