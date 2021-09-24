@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using XIVAPI4.Services.Readers;
-using XIVAPI4.Services.SheetDefinitions;
+using XIVAPI4.Services.Definitions;
 
 namespace XIVAPI4.Controllers;
 

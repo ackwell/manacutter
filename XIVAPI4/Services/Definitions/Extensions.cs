@@ -1,5 +1,5 @@
-﻿using XIVAPI4.Services.SheetDefinitions;
-using XIVAPI4.Services.SheetDefinitions.SaintCoinach;
+﻿using XIVAPI4.Services.Definitions;
+using XIVAPI4.Services.Definitions.SaintCoinach;
 
 namespace Microsoft.Extensions.DependencyInjection {
 	public static class SheetDefinitionServiceExtensions {
@@ -14,7 +14,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 	}
 }
 
-namespace XIVAPI4.Services.SheetDefinitions {
+namespace XIVAPI4.Services.Definitions {
 	internal class SheetDefinitionHostedService : IHostedService {
 		private readonly IServiceProvider serviceProvider;
 		public SheetDefinitionHostedService(IServiceProvider serviceProvider) {

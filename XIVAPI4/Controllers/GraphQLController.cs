@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using XIVAPI4.Services.GraphQL;
-using XIVAPI4.Services.SheetDefinitions;
+using XIVAPI4.Services.Definitions;
 
 namespace XIVAPI4.Controllers;
 

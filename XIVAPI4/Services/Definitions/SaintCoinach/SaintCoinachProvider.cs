@@ -3,7 +3,7 @@ using System.Text.Json;
 using XIVAPI4.Types;
 using Git = LibGit2Sharp;
 
-namespace XIVAPI4.Services.SheetDefinitions.SaintCoinach;
+namespace XIVAPI4.Services.Definitions.SaintCoinach;
 
 public class SaintCoinachOptions {
 	public const string Name = "SaintCoinach";

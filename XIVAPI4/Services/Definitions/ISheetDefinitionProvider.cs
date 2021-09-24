@@ -1,6 +1,6 @@
 ﻿using XIVAPI4.Types;
 
-namespace XIVAPI4.Services.SheetDefinitions;
+namespace XIVAPI4.Services.Definitions;
 
 public interface ISheetDefinitionProvider {
 	public string Name { get; }
