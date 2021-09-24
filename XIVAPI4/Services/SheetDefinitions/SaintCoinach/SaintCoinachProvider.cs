@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
 using System.Text.Json;
-using Git = LibGit2Sharp;
 using XIVAPI4.Types;
+using Git = LibGit2Sharp;
 
 namespace XIVAPI4.Services.SheetDefinitions.SaintCoinach;
 
@@ -39,7 +39,7 @@ public class SaintCoinachProvider : ISheetDefinitionProvider, IDisposable {
 		if (!Path.IsPathFullyQualified(repositoryPath)) {
 			repositoryPath = Path.GetFullPath(repositoryPath, this.hostEnvironment.ContentRootPath);
 		}
-		logger.LogInformation($"Repository path: {repositoryPath}");
+		this.logger.LogInformation($"Repository path: {repositoryPath}");
 
 		// If no repository is available at the configured path, clone it down.
 		if (!Directory.Exists(repositoryPath)) {
@@ -73,22 +73,6 @@ public class SaintCoinachProvider : ISheetDefinitionProvider, IDisposable {
 		}
 
 		return new StructNode(fields);
-	}
-
-	// TODO: the results of this function should probably be cached in some manner
-	public ISheetReader GetReader(string sheet) {
-		// TODO: ref should probably come from controller in some manner.
-		var sheetDefinition = this.GetDefinition(sheet, "HEAD");
-
-		// TODO: Proper recursive handling
-		var fields = new Dictionary<string, ISheetReader>();
-		foreach (var column in sheetDefinition.Definitions) {
-			fields.Add(column.Name ?? "TODO", new ScalarReader() {
-				Index = column.Index,
-			});
-		}
-
-		return new StructReader(fields);
 	}
 
 	private SheetDefinition GetDefinition(string sheet, string reference) {

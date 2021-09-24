@@ -8,7 +8,4 @@ public interface ISheetDefinitionProvider {
 	public Task Initialize();
 
 	public DataNode GetRootNode(string sheet);
-
-	[Obsolete] // TODO: finish migrating to the new node tree
-	public ISheetReader GetReader(string sheet);
 }
