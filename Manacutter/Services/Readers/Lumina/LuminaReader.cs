@@ -105,6 +105,8 @@ public class LuminaRowReader : IRowReader {
 		this.rowParser = rowParser;
 	}
 
+	public uint RowID { get => this.rowParser.Row; }
+
 	public object Read(DataNode node) {
 		// TODO: this is going to be a pretty common structure. Possibly make it a mixin... somehow?
 		return node switch {

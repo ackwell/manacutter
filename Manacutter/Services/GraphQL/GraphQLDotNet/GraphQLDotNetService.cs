@@ -36,6 +36,7 @@ public class GraphQLDotNetService : IGraphQLService {
 			fieldType.Name = sheetName;
 			if (fieldType.ResolvedType is not null) {
 				fieldType.ResolvedType.Name = sheetName;
+				this.AddIDFields(fieldType.ResolvedType);
 			}
 
 			// Add query fields to the root schema type
@@ -44,6 +45,19 @@ public class GraphQLDotNetService : IGraphQLService {
 		}
 
 		return new GraphQLDotNetSchema(graphType);
+	}
+
+	private void AddIDFields(IGraphType graphType) {
+		if (graphType is not ObjectGraphType) {
+			return;
+		}
+
+		var objectGraphType = (ObjectGraphType)graphType;
+		objectGraphType.Field("id", new UIntGraphType(), resolve: context => {
+			var execContext = (ExecutionContext)context.Source!;
+			return execContext.Row?.RowID;
+		});
+		// TODO: subrow
 	}
 
 	private FieldType BuildSheetSingular(FieldType fieldType, ISheetReader sheet) {

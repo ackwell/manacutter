@@ -20,6 +20,9 @@ public interface IColumnInfo {
 }
 
 public interface IRowReader {
+	public uint RowID { get; }
+	// TODO: SubRowID
+
 	// TODO: Should we have an explicit output type?
 	public object Read(DataNode node);
 }
