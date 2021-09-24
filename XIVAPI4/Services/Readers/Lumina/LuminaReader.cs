@@ -37,6 +37,12 @@ public class LuminaSheetReader : ISheetReader {
 		this.sheet = sheet;
 	}
 
+	public IColumnInfo GetColumn(uint columnIndex) {
+		return new LuminaColumnInfo() {
+			Definition = this.sheet.Columns[columnIndex]
+		};
+	}
+
 	public IRowReader? GetRow(uint rowId) {
 		var rowParser = this.sheet.GetRowParser(rowId);
 		if (rowParser is null) {
@@ -47,7 +53,50 @@ public class LuminaSheetReader : ISheetReader {
 	}
 }
 
-	public class LuminaRowReader : IRowReader {
+public class LuminaColumnInfo : IColumnInfo {
+	public ExcelColumnDefinition Definition { get; init; }
+
+	public ScalarType Type {
+		get {
+			switch (this.Definition.Type) {
+				case ExcelColumnDataType.String:
+					return ScalarType.String;
+				case ExcelColumnDataType.Bool:
+				case ExcelColumnDataType.PackedBool0:
+				case ExcelColumnDataType.PackedBool1:
+				case ExcelColumnDataType.PackedBool2:
+				case ExcelColumnDataType.PackedBool3:
+				case ExcelColumnDataType.PackedBool4:
+				case ExcelColumnDataType.PackedBool5:
+				case ExcelColumnDataType.PackedBool6:
+				case ExcelColumnDataType.PackedBool7:
+					return ScalarType.Boolean;
+				case ExcelColumnDataType.Int8:
+					return ScalarType.Int8;
+				case ExcelColumnDataType.UInt8:
+					return ScalarType.UInt8;
+				case ExcelColumnDataType.Int16:
+					return ScalarType.Int16;
+				case ExcelColumnDataType.UInt16:
+					return ScalarType.UInt16;
+				case ExcelColumnDataType.Int32:
+					return ScalarType.Int32;
+				case ExcelColumnDataType.UInt32:
+					return ScalarType.UInt32;
+				case ExcelColumnDataType.Int64:
+					return ScalarType.Int64;
+				case ExcelColumnDataType.UInt64:
+					return ScalarType.UInt64;
+				case ExcelColumnDataType.Float32:
+					return ScalarType.Float;
+				default:
+					return ScalarType.Unknown;
+			}
+		}
+	}
+}
+
+public class LuminaRowReader : IRowReader {
 	private RowParser rowParser;
 
 	public LuminaRowReader(
@@ -57,6 +106,7 @@ public class LuminaSheetReader : ISheetReader {
 	}
 
 	public object Read(DataNode node) {
+		// TODO: this is going to be a pretty common structure. Possibly make it a mixin... somehow?
 		return node switch { 
 			StructNode structNode => this.ReadStruct(structNode),
 			ScalarNode scalarNode => this.ReadScalar(scalarNode),
@@ -73,7 +123,7 @@ public class LuminaSheetReader : ISheetReader {
 	}
 
 	private object ReadScalar(ScalarNode node) {
-		var value = this.rowParser.ReadColumnRaw(node.Index);
+		var value = this.rowParser.ReadColumnRaw((int)node.Index);
 		// TODO: Will probably need slightly more involved logic for SeString in the long run.
 		if (this.rowParser.Sheet.Columns[node.Index].Type == ExcelColumnDataType.String) {
 			value = value.ToString()!;

@@ -8,8 +8,14 @@ public interface IReader {
 }
 
 public interface ISheetReader {
+	public IColumnInfo GetColumn(uint columnIndex);
+
 	// TODO: Subrow handling
 	public IRowReader? GetRow(uint rowId);
+}
+
+public interface IColumnInfo {
+	public ScalarType Type { get; }
 }
 
 public interface IRowReader {

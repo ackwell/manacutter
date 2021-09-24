@@ -4,6 +4,8 @@ using GraphQL.SystemTextJson;
 using Lumina;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
+using XIVAPI4.Services.GraphQL;
+using XIVAPI4.Services.Readers;
 using XIVAPI4.Services.SheetDefinitions;
 
 namespace XIVAPI4.Controllers;
@@ -14,21 +16,36 @@ namespace XIVAPI4.Controllers;
 [ApiController]
 public class GraphQLController : ControllerBase {
 	private readonly IEnumerable<ISheetDefinitionProvider> definitionProviders;
+	private readonly IGraphQLService graphQL;
+	private readonly IReader reader;
 	private readonly GameData lumina;
 
 	public GraphQLController(
 		IEnumerable<ISheetDefinitionProvider> definitionProviders,
+		IGraphQLService graphQL,
+		IReader reader,
 		GameData lumina
 	) {
+		this.reader = reader;
+		this.graphQL = graphQL;
 		this.definitionProviders = definitionProviders;
 		this.lumina = lumina;
 	}
 
 	[HttpPost]
 	public async Task<IActionResult> Get([FromBody] GraphQLRequest request) {
+		var definitionProvider = this.definitionProviders.First();
+		var rootNode = definitionProvider.GetRootNode("Action");
+
+		var foo = this.graphQL.BuildSchema("Action", rootNode);
+
+		var bar = await foo.Query(request.Query, request.Variables);
+
+		return this.Ok(bar);
+
+
 		// this makes two places that need to do all this lookup stuff
 		var sheet = this.lumina.Excel.GetSheetRaw("Action");
-		var definitionProvider = this.definitionProviders.First();
 		var sheetReader = definitionProvider.GetReader("Action");
 
 		var actionGraph = sheetReader.BuildGraph(sheet);

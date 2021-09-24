@@ -12,6 +12,7 @@ public class SaintCoinachOptions {
 	public string Directory { get; set; } = $"./{Name}";
 }
 
+// TODO: this class has a weird mix of responsibilities between git logic and node building, should be split up.
 public class SaintCoinachProvider : ISheetDefinitionProvider, IDisposable {
 	public string Name => "saint-coinach";
 
@@ -66,7 +67,8 @@ public class SaintCoinachProvider : ISheetDefinitionProvider, IDisposable {
 		var fields = new Dictionary<string, DataNode>();
 		foreach (var column in sheetDefinition.Definitions) {
 			fields.Add(column.Name ?? "TODO", new ScalarNode() {
-				Index = column.Index,
+				Index = (uint)column.Index,
+				Type = ScalarType.Unknown,
 			});
 		}
 

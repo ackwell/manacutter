@@ -2,7 +2,7 @@
 
 public abstract class DataNode {
 	// TODO: Work out how this will interact with arrays and so on
-	public int Index { get; init; }
+	public uint Index { get; init; }
 }
 
 public class StructNode : DataNode {
@@ -15,4 +15,21 @@ public class StructNode : DataNode {
 	}
 }
 
-public class ScalarNode : DataNode { }
+public class ScalarNode : DataNode {
+	public ScalarType Type { get; init; }
+}
+
+public enum ScalarType {
+	Unknown = 0,
+	String,
+	Boolean,
+	Int8,
+	UInt8,
+	Int16,
+	UInt16,
+	Int32,
+	UInt32,
+	Int64,
+	UInt64,
+	Float,
+}
