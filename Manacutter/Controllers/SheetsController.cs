@@ -8,11 +8,11 @@ namespace Manacutter.Controllers;
 [ApiController]
 public class SheetsController : ControllerBase {
 	private readonly IReader reader;
-	private readonly IEnumerable<ISheetDefinitionProvider> definitionProviders;
+	private readonly IEnumerable<IDefinitionProvider> definitionProviders;
 
 	public SheetsController(
 		IReader reader,
-		IEnumerable<ISheetDefinitionProvider> definitionProviders
+		IEnumerable<IDefinitionProvider> definitionProviders
 	) {
 		this.reader = reader;
 		this.definitionProviders = definitionProviders;

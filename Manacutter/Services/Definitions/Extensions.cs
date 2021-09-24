@@ -5,7 +5,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 	public static class SheetDefinitionServiceExtensions {
 		public static IServiceCollection AddSheetDefinitionProviders(this IServiceCollection services, IConfiguration configuration) {
 			services.Configure<SaintCoinachOptions>(configuration.GetSection(SaintCoinachOptions.Name));
-			services.AddSingleton<ISheetDefinitionProvider, SaintCoinachProvider>();
+			services.AddSingleton<IDefinitionProvider, SaintCoinachProvider>();
 
 			services.AddHostedService<SheetDefinitionHostedService>();
 
@@ -22,7 +22,7 @@ namespace Manacutter.Services.Definitions {
 		}
 
 		public Task StartAsync(CancellationToken cancellationToken) {
-			var providers = this.serviceProvider.GetRequiredService<IEnumerable<ISheetDefinitionProvider>>();
+			var providers = this.serviceProvider.GetRequiredService<IEnumerable<IDefinitionProvider>>();
 			return Task.WhenAll(providers.Select(provider => provider.Initialize()));
 		}
 

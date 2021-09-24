@@ -10,11 +10,11 @@ namespace Manacutter.Controllers;
 [Route("[controller]")]
 [ApiController]
 public class GraphQLController : ControllerBase {
-	private readonly IEnumerable<ISheetDefinitionProvider> definitionProviders;
+	private readonly IEnumerable<IDefinitionProvider> definitionProviders;
 	private readonly IGraphQLService graphQL;
 
 	public GraphQLController(
-		IEnumerable<ISheetDefinitionProvider> definitionProviders,
+		IEnumerable<IDefinitionProvider> definitionProviders,
 		IGraphQLService graphQL
 	) {
 		this.graphQL = graphQL;

@@ -2,7 +2,7 @@
 
 namespace Manacutter.Services.Definitions;
 
-public interface ISheetDefinitionProvider {
+public interface IDefinitionProvider {
 	public string Name { get; }
 
 	public Task Initialize();

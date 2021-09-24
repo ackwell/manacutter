@@ -13,7 +13,7 @@ public class SaintCoinachOptions {
 }
 
 // TODO: this class has a weird mix of responsibilities between git logic and node building, should be split up.
-public class SaintCoinachProvider : ISheetDefinitionProvider, IDisposable {
+public class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 	public string Name => "saint-coinach";
 
 	private Git.Repository? repository;
