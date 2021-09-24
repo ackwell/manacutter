@@ -31,12 +31,14 @@ public class GraphQLDotNetService : IGraphQLService {
 			if (sheet is null) { continue; }
 			var sheetNode = definitionProvider.GetRootNode(sheetName);
 
+			// Build & name the core field type for the sheet
 			var fieldType = this.BuildFieldType(sheetNode, sheet);
 			fieldType.Name = sheetName;
 			if (fieldType.ResolvedType is not null) {
 				fieldType.ResolvedType.Name = sheetName;
 			}
 
+			// Add query fields to the root schema type
 			graphType.AddField(this.BuildSheetSingular(fieldType, sheet));
 		}
 
@@ -51,9 +53,15 @@ public class GraphQLDotNetService : IGraphQLService {
 				new QueryArgument<NonNullGraphType<UIntGraphType>>() { Name = "id" }
 			),
 			Resolver = new FuncFieldResolver<object>(context => {
-				// TODO: we really need to call down to the base field type, data should be moving around in a class we control
 				var id = context.GetArgument<uint>("id");
-				return sheet.GetRow(id);
+
+				var execContext = (ExecutionContext)context.Source!;
+				execContext.Sheet = sheet;
+				execContext.Row = sheet.GetRow(id);
+
+				return fieldType.Resolver is null
+					? context
+					: fieldType.Resolver.Resolve(context);
 			})
 		};
 	}
@@ -82,7 +90,6 @@ public class GraphQLDotNetService : IGraphQLService {
 
 		return new FieldType() {
 			ResolvedType = type,
-			// TODO: Resolver to pass down the parser I guess?
 			Resolver = new FuncFieldResolver<object>(context => context.Source)
 		};
 	}
@@ -121,11 +128,16 @@ public class GraphQLDotNetService : IGraphQLService {
 			ResolvedType = graphType,
 			// TODO: clean this up
 			Resolver = new FuncFieldResolver<object>(context => {
-				var rowReader = (IRowReader?)context.Source;
-				return rowReader?.Read(node);
+				var execContext = (ExecutionContext)context.Source!;
+				return execContext.Row?.Read(node);
 			}),
 		};
 	}
+}
+
+public class ExecutionContext {
+	public ISheetReader? Sheet { get; set; }
+	public IRowReader? Row { get; set; }
 }
 
 public class GraphQLDotNetSchema : IGraphQLSchema {
@@ -144,6 +156,7 @@ public class GraphQLDotNetSchema : IGraphQLSchema {
 		return this.schema.ExecuteAsync(options => {
 			options.Query = query;
 			options.Inputs = variables.ToInputs();
+			options.Root = new ExecutionContext();
 		});
 	}
 }
