@@ -11,6 +11,7 @@ public interface ISheetReader {
 	public IColumnInfo GetColumn(uint columnIndex);
 
 	// TODO: Subrow handling
+	// TODO: Definitions throws, this is nullable. Need to solidy on a solution in one direction.
 	public IRowReader? GetRow(uint rowId);
 }
 

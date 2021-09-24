@@ -1,14 +1,11 @@
-﻿using Manacutter.Types;
+﻿using Manacutter.Services.Definitions;
 using System.Text.Json;
 
 namespace Manacutter.Services.GraphQL;
 
 // TODO: better name
 public interface IGraphQLService {
-	// TODO: How does this work alongside multiple sheets, ppagination, etc?
-	//       Maybe this should build a _full_ schema, including every sheet?
-	// TODO: Should probably remove the sheet name given the above.
-	public IGraphQLSchema BuildSchema(string sheetName, DataNode node);
+	public IGraphQLSchema GetSchema(IDefinitionProvider definitionProvider);
 }
 
 public interface IGraphQLSchema {

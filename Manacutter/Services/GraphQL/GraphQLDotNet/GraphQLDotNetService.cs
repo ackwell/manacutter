@@ -2,6 +2,7 @@
 using GraphQL.Resolvers;
 using GraphQL.SystemTextJson;
 using GraphQL.Types;
+using Manacutter.Services.Definitions;
 using Manacutter.Services.Readers;
 using Manacutter.Types;
 using System.Text.Json;
@@ -17,22 +18,34 @@ public class GraphQLDotNetService : IGraphQLService {
 		this.reader = reader;
 	}
 
-	// TODO: Not sure about these args, we'll possibly need more data to feed into the reader
-	public IGraphQLSchema BuildSchema(string sheetName, DataNode node) {
-		// TODO: sheet name needs standardisation across the board
-		var sheet = this.reader.GetSheet(sheetName);
-		// TODO: null check sheet
+	// TODO: Cache schemas or something
+	public IGraphQLSchema GetSchema(IDefinitionProvider definitionProvider) {
+		// TODO: Get this from... something. It's a tossup between reader (as it's the source of truth for game data), and definitions (as it's the source of truth for what we can read). Leaning towards the latter currently, which will require some interface additions.
+		// TODO: sheet name needs standardisation across the board on stuff like caps.
+		var sheetNames = new[] { "Action" };
 
-		// TODO: how do we go from field type to something representing a sheet?
-		// possibly pull out the resolver and replace with a copy that calls down?
-		var fieldType = this.BuildFieldType(node, sheet);
+		var graphType = new ObjectGraphType() { Name = "Query" };
 
-		// temp beneath here
-		fieldType.ResolvedType!.Name = sheetName;
+		foreach (var sheetName in sheetNames) {
+			var sheet = this.reader.GetSheet(sheetName);
+			if (sheet is null) { continue; }
+			var sheetNode = definitionProvider.GetRootNode(sheetName);
 
-		// TODO: might want to make a .Copy extension method?
-		var singular = new FieldType() {
-			Name = sheetName,
+			var fieldType = this.BuildFieldType(sheetNode, sheet);
+			fieldType.Name = sheetName;
+			if (fieldType.ResolvedType is not null) {
+				fieldType.ResolvedType.Name = sheetName;
+			}
+
+			graphType.AddField(this.BuildSheetSingular(fieldType, sheet));
+		}
+
+		return new GraphQLDotNetSchema(graphType);
+	}
+
+	private FieldType BuildSheetSingular(FieldType fieldType, ISheetReader sheet) {
+		return new FieldType() {
+			Name = fieldType.Name,
 			ResolvedType = fieldType.ResolvedType,
 			Arguments = new QueryArguments(
 				new QueryArgument<NonNullGraphType<UIntGraphType>>() { Name = "id" }
@@ -41,15 +54,8 @@ public class GraphQLDotNetService : IGraphQLService {
 				// TODO: we really need to call down to the base field type, data should be moving around in a class we control
 				var id = context.GetArgument<uint>("id");
 				return sheet.GetRow(id);
-				//return fieldType.Resolver?.Resolve(context);
 			})
 		};
-
-		var graphType = new ObjectGraphType();
-		graphType.Name = "Query";
-		graphType.AddField(singular);
-
-		return new GraphQLDotNetSchema(graphType, sheet);
 	}
 
 	private FieldType BuildFieldType(DataNode node, ISheetReader sheet) {
@@ -124,17 +130,13 @@ public class GraphQLDotNetService : IGraphQLService {
 
 public class GraphQLDotNetSchema : IGraphQLSchema {
 	private Schema schema;
-	// TODO: this is temp. sheet fields should be doing... something... to this tune internally.
-	private ISheetReader sheet;
 
 	public GraphQLDotNetSchema(
-		ObjectGraphType rootGraphType,
-		ISheetReader sheet
+		ObjectGraphType rootGraphType
 	) {
 		this.schema = new Schema() {
 			Query = rootGraphType
 		};
-		this.sheet = sheet;
 	}
 
 	// TODO: think about the variables type a bit.
@@ -142,8 +144,6 @@ public class GraphQLDotNetSchema : IGraphQLSchema {
 		return this.schema.ExecuteAsync(options => {
 			options.Query = query;
 			options.Inputs = variables.ToInputs();
-			// TODO: lmao
-			options.Root = this.sheet.GetRow(7518);
 		});
 	}
 }

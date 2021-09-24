@@ -25,13 +25,12 @@ public class GraphQLController : ControllerBase {
 	public async Task<IActionResult> Get([FromBody] GraphQLRequest request) {
 		// TODO: this makes two places that need to do all this lookup stuff
 		var definitionProvider = this.definitionProviders.First();
-		var rootNode = definitionProvider.GetRootNode("Action");
 
-		var foo = this.graphQL.BuildSchema("Action", rootNode);
+		var schema = this.graphQL.GetSchema(definitionProvider);
 
-		var bar = await foo.Query(request.Query, request.Variables);
+		var json = await schema.Query(request.Query, request.Variables);
 
-		return this.Ok(bar);
+		return this.Ok(json);
 	}
 }
 
