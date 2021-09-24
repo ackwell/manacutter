@@ -1,12 +1,12 @@
 ﻿using GraphQL;
 using GraphQL.Resolvers;
-using GraphQL.Types;
 using GraphQL.SystemTextJson;
+using GraphQL.Types;
+using Manacutter.Services.Readers;
+using Manacutter.Types;
 using System.Text.Json;
-using XIVAPI4.Services.Readers;
-using XIVAPI4.Types;
 
-namespace XIVAPI4.Services.GraphQL.GraphQLDotNet;
+namespace Manacutter.Services.GraphQL.GraphQLDotNet;
 
 public class GraphQLDotNetService : IGraphQLService {
 	private readonly IReader reader;
@@ -35,7 +35,7 @@ public class GraphQLDotNetService : IGraphQLService {
 			Name = sheetName,
 			ResolvedType = fieldType.ResolvedType,
 			Arguments = new QueryArguments(
-				new QueryArgument<NonNullGraphType<UIntGraphType>>() { Name = "id" }	
+				new QueryArgument<NonNullGraphType<UIntGraphType>>() { Name = "id" }
 			),
 			Resolver = new FuncFieldResolver<object>(context => {
 				// TODO: we really need to call down to the base field type, data should be moving around in a class we control

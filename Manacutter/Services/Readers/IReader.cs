@@ -1,6 +1,6 @@
-﻿using XIVAPI4.Types;
+﻿using Manacutter.Types;
 
-namespace XIVAPI4.Services.Readers;
+namespace Manacutter.Services.Readers;
 
 public interface IReader {
 	public IEnumerable<string> GetSheetNames();

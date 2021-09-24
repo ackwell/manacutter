@@ -1,5 +1,5 @@
-﻿using XIVAPI4.Services.GraphQL;
-using XIVAPI4.Services.GraphQL.GraphQLDotNet;
+﻿using Manacutter.Services.GraphQL;
+using Manacutter.Services.GraphQL.GraphQLDotNet;
 
 namespace Microsoft.Extensions.DependencyInjection {
 	public static class GraphQLServiceExtensions {

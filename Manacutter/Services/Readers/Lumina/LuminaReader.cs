@@ -1,9 +1,9 @@
 ﻿using Lumina;
-using Lumina.Excel;
 using Lumina.Data.Structs.Excel;
-using XIVAPI4.Types;
+using Lumina.Excel;
+using Manacutter.Types;
 
-namespace XIVAPI4.Services.Readers.Lumina;
+namespace Manacutter.Services.Readers.Lumina;
 
 public class LuminaReader : IReader {
 	private readonly GameData lumina;
@@ -107,7 +107,7 @@ public class LuminaRowReader : IRowReader {
 
 	public object Read(DataNode node) {
 		// TODO: this is going to be a pretty common structure. Possibly make it a mixin... somehow?
-		return node switch { 
+		return node switch {
 			StructNode structNode => this.ReadStruct(structNode),
 			ScalarNode scalarNode => this.ReadScalar(scalarNode),
 			// TODO: Can we avoid this to make the exhaustiveness checking compile time?

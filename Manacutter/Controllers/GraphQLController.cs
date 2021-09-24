@@ -1,9 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Manacutter.Services.Definitions;
+using Manacutter.Services.GraphQL;
+using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
-using XIVAPI4.Services.GraphQL;
-using XIVAPI4.Services.Definitions;
 
-namespace XIVAPI4.Controllers;
+namespace Manacutter.Controllers;
 
 // TODO: This should really be a custom middleware, not a controller.
 //       Or should it? idfk. Testing, testing, 123.

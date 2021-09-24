@@ -1,5 +1,5 @@
-﻿using XIVAPI4.Services.Readers;
-using XIVAPI4.Services.Readers.Lumina;
+﻿using Manacutter.Services.Readers;
+using Manacutter.Services.Readers.Lumina;
 
 namespace Microsoft.Extensions.DependencyInjection {
 	public static class ReaderServiceExtensions {

@@ -1,9 +1,9 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Manacutter.Types;
+using Microsoft.Extensions.Options;
 using System.Text.Json;
-using XIVAPI4.Types;
 using Git = LibGit2Sharp;
 
-namespace XIVAPI4.Services.Definitions.SaintCoinach;
+namespace Manacutter.Services.Definitions.SaintCoinach;
 
 public class SaintCoinachOptions {
 	public const string Name = "SaintCoinach";

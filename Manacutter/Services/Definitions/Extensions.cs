@@ -1,5 +1,5 @@
-﻿using XIVAPI4.Services.Definitions;
-using XIVAPI4.Services.Definitions.SaintCoinach;
+﻿using Manacutter.Services.Definitions;
+using Manacutter.Services.Definitions.SaintCoinach;
 
 namespace Microsoft.Extensions.DependencyInjection {
 	public static class SheetDefinitionServiceExtensions {
@@ -14,7 +14,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 	}
 }
 
-namespace XIVAPI4.Services.Definitions {
+namespace Manacutter.Services.Definitions {
 	internal class SheetDefinitionHostedService : IHostedService {
 		private readonly IServiceProvider serviceProvider;
 		public SheetDefinitionHostedService(IServiceProvider serviceProvider) {

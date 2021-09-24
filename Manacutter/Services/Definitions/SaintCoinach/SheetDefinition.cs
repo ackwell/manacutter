@@ -1,4 +1,4 @@
-﻿namespace XIVAPI4.Services.Definitions.SaintCoinach;
+﻿namespace Manacutter.Services.Definitions.SaintCoinach;
 
 #pragma warning disable CS8618
 

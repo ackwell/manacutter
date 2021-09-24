@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using XIVAPI4.Services.Readers;
-using XIVAPI4.Services.Definitions;
+﻿using Manacutter.Services.Definitions;
+using Manacutter.Services.Readers;
+using Microsoft.AspNetCore.Mvc;
 
-namespace XIVAPI4.Controllers;
+namespace Manacutter.Controllers;
 
 [Route("[controller]")]
 [ApiController]

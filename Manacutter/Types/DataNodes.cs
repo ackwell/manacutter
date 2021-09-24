@@ -1,4 +1,4 @@
-﻿namespace XIVAPI4.Types;
+﻿namespace Manacutter.Types;
 
 public abstract class DataNode {
 	// TODO: Work out how this will interact with arrays and so on

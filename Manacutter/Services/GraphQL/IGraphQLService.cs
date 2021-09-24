@@ -1,7 +1,7 @@
-﻿using System.Text.Json;
-using XIVAPI4.Types;
+﻿using Manacutter.Types;
+using System.Text.Json;
 
-namespace XIVAPI4.Services.GraphQL;
+namespace Manacutter.Services.GraphQL;
 
 // TODO: better name
 public interface IGraphQLService {

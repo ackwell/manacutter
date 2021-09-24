@@ -1,6 +1,6 @@
-﻿using XIVAPI4.Types;
+﻿using Manacutter.Types;
 
-namespace XIVAPI4.Services.Definitions;
+namespace Manacutter.Services.Definitions;
 
 public interface ISheetDefinitionProvider {
 	public string Name { get; }
