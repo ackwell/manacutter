@@ -40,6 +40,7 @@ public class GraphQLDotNetService : IGraphQLService {
 
 			// Add query fields to the root schema type
 			graphType.AddField(this.BuildSheetSingular(fieldType, sheet));
+			graphType.AddField(this.BuildSheetPlural(fieldType, sheet));
 		}
 
 		return new GraphQLDotNetSchema(graphType);
@@ -62,6 +63,22 @@ public class GraphQLDotNetService : IGraphQLService {
 				return fieldType.Resolver is null
 					? context
 					: fieldType.Resolver.Resolve(context);
+			})
+		};
+	}
+
+	private FieldType BuildSheetPlural(FieldType fieldType, ISheetReader sheet) {
+		// TODO: Build a proper relay structure
+		return new FieldType() {
+			// TODO: actually pluralise this
+			Name = $"{fieldType.Name}_plural",
+			ResolvedType = new ListGraphType(fieldType.ResolvedType),
+			Resolver = new FuncFieldResolver<object>(context => {
+				// TODO: Temp testing stuff
+				var execContexts = context.ArrayPool.Rent<ExecutionContext>(2);
+				execContexts[0] = new ExecutionContext() { Sheet = sheet, Row = sheet.GetRow(1) };
+				execContexts[1] = new ExecutionContext() { Sheet = sheet, Row = sheet.GetRow(2) };
+				return execContexts.Constrained(2);
 			})
 		};
 	}
