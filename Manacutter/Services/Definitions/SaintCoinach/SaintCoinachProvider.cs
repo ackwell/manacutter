@@ -1,5 +1,6 @@
 ﻿using Manacutter.Types;
 using Microsoft.Extensions.Options;
+using System.Text;
 using System.Text.Json;
 using Git = LibGit2Sharp;
 
@@ -66,16 +67,17 @@ public class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 		// TODO: this is duped with group reader, possibly consolidate
 		var fields = new Dictionary<string, DataNode>();
 		foreach (var column in sheetDefinition.Definitions) {
+			var (node, name) = this.ParseDefinition(column, 0);
 			fields.Add(
-				column.Name ?? $"Unnamed{column.Index}",
-				this.ParseDefinition(column, 0)
+				column.Name ?? name ?? $"Unnamed{column.Index}",
+				node
 			);
 		}
 
 		return new StructNode(fields);
 	}
 
-	private DataNode ParseDefinition(DefinitionEntry definition, uint offset) {
+	private (DataNode, string?) ParseDefinition(DefinitionEntry definition, uint offset) {
 		return definition.Type switch {
 			null => this.ParseScalarDefinition(definition, offset),
 			"repeat" => this.ParseRepeatDefinition(definition, offset),
@@ -84,13 +86,15 @@ public class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 		};
 	}
 
-	private DataNode ParseScalarDefinition(DefinitionEntry definition, uint offset) {
-		return new ScalarNode() {
+	private (DataNode, string?) ParseScalarDefinition(DefinitionEntry definition, uint offset) {
+		var node = new ScalarNode() {
 			Offset = definition.Index + offset,
 		};
+
+		return (node, definition.Name);
 	}
 
-	private DataNode ParseRepeatDefinition(DefinitionEntry definition, uint offset) {
+	private (DataNode, string?) ParseRepeatDefinition(DefinitionEntry definition, uint offset) {
 		if (
 			definition.Definition is null
 			|| definition.Count is null
@@ -98,15 +102,14 @@ public class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 			throw new ArgumentException($"Invalid repeat definition.");
 		}
 
-		return new ArrayNode(
-			this.ParseDefinition(definition.Definition, 0),
-			(uint)definition.Count
-		) {
+		var (childNode, name) = this.ParseDefinition(definition.Definition, 0);
+		var node = new ArrayNode(childNode, (uint)definition.Count) {
 			Offset = definition.Index + offset,
 		};
+		return (node, name);
 	}
 
-	private DataNode ParseGroupDefinition(DefinitionEntry definition, uint offset) {
+	private (DataNode, string?) ParseGroupDefinition(DefinitionEntry definition, uint offset) {
 		if (definition.Members is null) {
 			throw new ArgumentException($"Invalid group definition.");
 		}
@@ -114,18 +117,64 @@ public class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 		var fields = new Dictionary<string, DataNode>();
 		uint size = 0;
 		foreach (var member in definition.Members) {
-			var node = this.ParseDefinition(member, size);
+			var (childNode, childName) = this.ParseDefinition(member, size);
 
 			fields.Add(
-				member.Name ?? $"Unnamed{member.Index}",
-				node
+				member.Name ?? childName ?? $"Unnamed{member.Index}",
+				childNode
 			);
 
-			size += node.Size;
+			size += childNode.Size;
 		}
-		return new StructNode(fields) {
+		
+		var node = new StructNode(fields) {
 			Offset = definition.Index + offset,
 		};
+		var name = definition.Name;
+		if (name is null) {
+			var lcs = fields.Keys.Aggregate(GetLCS);
+			name = lcs != "" ? lcs : null;
+		}
+		return (node, name);
+	}
+
+	// TODO: Move this somewhere more sensible lmao
+	// TODO: Check if we need to look into optimisations e.g. suffix tree
+	// Thanks, wikipedia
+	private static string GetLCS(string a, string b) {
+		// Initalise table
+		int[,] table = new int[a.Length + 1, b.Length + 1];
+
+		// LCS algo
+		int i;
+		int j;
+		for (i = 1; i <= a.Length; i++) {
+			for (j = 1; j <= b.Length; j++) {
+				table[i, j] = a[i - 1] == b[j - 1]
+					? table[i, j] = table[i - 1, j - 1] + 1
+					: table[i - 1, j] > table[i, j - 1]
+						? table[i - 1, j]
+						: table[i, j - 1];
+			}
+		}
+
+		// Backtrack the table into a string
+		var output = "";
+		i = a.Length;
+		j = b.Length;
+		while (i > 0 && j > 0) {
+			if (a[i - 1] == b[j - 1]) {
+				output = a[i - 1] + output;
+				i--;
+				j--;
+			} else if (table[i - 1, j] > table[i, j - 1]) {
+				i--;
+			} else {
+				j--;
+			}
+		}
+
+		return output;
 	}
 
 	private SheetDefinition GetDefinition(string sheet, string reference) {
