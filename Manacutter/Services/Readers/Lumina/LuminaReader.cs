@@ -138,15 +138,20 @@ public class LuminaRowReader : IRowReader {
 			var elementOffset = index * elementWidth;
 			value.Add(this.Read(node.Type, offset + node.Offset + elementOffset));
 		}
+
 		return value;
 	}
 
 	private object ReadScalar(ScalarNode node, uint offset) {
-		var value = this.rowParser.ReadColumnRaw((int)(offset + node.Offset));
+		var index = offset + node.Offset;
+		var value = this.rowParser.ReadColumnRaw((int)index);
+		var column = this.rowParser.Sheet.Columns[index];
+
 		// TODO: Will probably need slightly more involved logic for SeString in the long run.
-		if (this.rowParser.Sheet.Columns[node.Offset].Type == ExcelColumnDataType.String) {
+		if (column.Type == ExcelColumnDataType.String) {
 			value = value.ToString()!;
 		}
+
 		return value;
 	}
 }
