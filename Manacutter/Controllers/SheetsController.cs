@@ -41,6 +41,6 @@ public class SheetsController : ControllerBase {
 		var rootNode = definitionProvider.GetRootNode(sheetName);
 
 		// TODO: expose row/subrow ids
-		return this.Ok(row.Read(rootNode));
+		return this.Ok(row.Read(rootNode, 0));
 	}
 }

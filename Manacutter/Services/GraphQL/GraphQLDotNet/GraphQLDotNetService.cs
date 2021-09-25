@@ -22,7 +22,7 @@ public class GraphQLDotNetService : IGraphQLService {
 	public IGraphQLSchema GetSchema(IDefinitionProvider definitionProvider) {
 		// TODO: Get this from... something. It's a tossup between reader (as it's the source of truth for game data), and definitions (as it's the source of truth for what we can read). Leaning towards the latter currently, which will require some interface additions.
 		// TODO: sheet name needs standardisation across the board on stuff like caps.
-		var sheetNames = new[] { "Action" };
+		var sheetNames = new[] { "Action", "Item" };
 
 		var graphType = new ObjectGraphType() { Name = "Query" };
 
@@ -32,7 +32,7 @@ public class GraphQLDotNetService : IGraphQLService {
 			var sheetNode = definitionProvider.GetRootNode(sheetName);
 
 			// Build & name the core field type for the sheet
-			var fieldType = this.BuildFieldType(sheetNode, sheet);
+			var fieldType = this.BuildFieldType(sheetNode, sheet, 0);
 			fieldType.Name = sheetName;
 			if (fieldType.ResolvedType is not null) {
 				fieldType.ResolvedType.Name = sheetName;
@@ -98,15 +98,16 @@ public class GraphQLDotNetService : IGraphQLService {
 		};
 	}
 
-	private FieldType BuildFieldType(DataNode node, ISheetReader sheet) {
+	private FieldType BuildFieldType(DataNode node, ISheetReader sheet, uint offset) {
 		return node switch {
-			StructNode structNode => this.BuildStructFieldType(structNode, sheet),
-			ScalarNode scalarNode => this.BuildScalarFieldType(scalarNode, sheet),
+			StructNode structNode => this.BuildStructFieldType(structNode, sheet, offset),
+			ArrayNode arrayNode => this.BuildArrayFieldType(arrayNode, sheet, offset),
+			ScalarNode scalarNode => this.BuildScalarFieldType(scalarNode, sheet, offset),
 			_ => throw new NotImplementedException(),
 		};
 	}
 
-	private FieldType BuildStructFieldType(StructNode node, ISheetReader sheet) {
+	private FieldType BuildStructFieldType(StructNode node, ISheetReader sheet, uint offset) {
 		var type = new ObjectGraphType();
 
 		foreach (var field in node.Fields) {
@@ -115,22 +116,55 @@ public class GraphQLDotNetService : IGraphQLService {
 				.Replace('{', '_').Replace('}', '_')
 				.Replace('<', '_').Replace('>', '_');
 
-			var fieldType = this.BuildFieldType(field.Value, sheet);
+			var fieldType = this.BuildFieldType(field.Value, sheet, offset + node.Offset);
 			fieldType.Name = name;
 			type.AddField(fieldType);
 		}
 
 		return new FieldType() {
 			ResolvedType = type,
-			Resolver = new FuncFieldResolver<object>(context => context.Source)
+			Resolver = new FuncFieldResolver<object>(context => {
+				var executionContext = (ExecutionContext)context.Source!;
+				// TODO: might be worth making a copy method for this
+				return new ExecutionContext() {
+					Sheet = executionContext.Sheet,
+					Row = executionContext.Row,
+					Offset = executionContext.Offset + node.Offset,
+				};
+			})
 		};
 	}
 
-	private FieldType BuildScalarFieldType(ScalarNode node, ISheetReader sheet) {
+	private FieldType BuildArrayFieldType(ArrayNode node, ISheetReader sheet, uint offset) {
+		var fieldType = this.BuildFieldType(node.Type, sheet, offset + node.Offset);
+
+		return new FieldType() {
+			ResolvedType = new ListGraphType(fieldType.ResolvedType),
+			Resolver = new FuncFieldResolver<object>(context => {
+				var executionContext = (ExecutionContext)context.Source!;
+				var baseOffset = executionContext.Offset + node.Offset;
+				var elementWidth = node.Type.Size;
+
+				var execContexts = context.ArrayPool.Rent<ExecutionContext>((int)node.Count);
+				for (int index = 0; index < node.Count; index++) {
+					var elementOffset = index * elementWidth;
+					execContexts[index] = new ExecutionContext() {
+						Sheet = executionContext.Sheet,
+						Row = executionContext.Row,
+						Offset = (uint)(baseOffset + elementOffset),
+					};
+				}
+
+				return execContexts.Constrained((int)node.Count);
+			}),
+		};
+	}
+
+	private FieldType BuildScalarFieldType(ScalarNode node, ISheetReader sheet, uint offset) {
 		// If the node type wasn't provided by the definition, check the reader
 		// TODO: If this needs doing in 2+ places, may be better off doing a one-off hydrate per sheet instance.
 		var columnType = node.Type == ScalarType.Unknown
-			? sheet.GetColumn(node.Offset).Type
+			? sheet.GetColumn(offset + node.Offset).Type
 			: node.Type;
 
 		// If it's an unknown type, we shortcut with an explicit unknown handler
@@ -158,10 +192,11 @@ public class GraphQLDotNetService : IGraphQLService {
 
 		return new FieldType() {
 			ResolvedType = graphType,
-			// TODO: clean this up
 			Resolver = new FuncFieldResolver<object>(context => {
 				var execContext = (ExecutionContext)context.Source!;
-				return execContext.Row?.Read(node);
+				// This is not including the offset, as it's added by the reader
+				// TODO: The above seems janky, in a way. Think about it.
+				return execContext.Row?.Read(node, execContext.Offset);
 			}),
 		};
 	}
@@ -170,6 +205,8 @@ public class GraphQLDotNetService : IGraphQLService {
 public class ExecutionContext {
 	public ISheetReader? Sheet { get; set; }
 	public IRowReader? Row { get; set; }
+	// TODO: This is only really _nessecary_ for array nodes - is there a better way to handle it?
+	public uint Offset { get; set; } = 0;
 }
 
 public class GraphQLDotNetSchema : IGraphQLSchema {

@@ -24,5 +24,5 @@ public interface IRowReader {
 	// TODO: SubRowID
 
 	// TODO: Should we have an explicit output type?
-	public object Read(DataNode node);
+	public object Read(DataNode node, uint offset);
 }

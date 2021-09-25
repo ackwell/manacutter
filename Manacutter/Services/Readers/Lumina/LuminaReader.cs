@@ -107,13 +107,9 @@ public class LuminaRowReader : IRowReader {
 
 	public uint RowID { get => this.rowParser.Row; }
 
-	// TODO: If the offset idea works out, promote it to the interface?
-	public object Read(DataNode node) {
-		return this.Read(node, 0);
-	}
-
-	private object Read(DataNode node, uint offset) {
+	public object Read(DataNode node, uint offset) {
 		// TODO: this is going to be a pretty common structure. Possibly make it a mixin... somehow?
+		//       doubly so given the offset logic
 		return node switch {
 			StructNode structNode => this.ReadStruct(structNode, offset),
 			ArrayNode arrayNode => this.ReadArray(arrayNode, offset),
