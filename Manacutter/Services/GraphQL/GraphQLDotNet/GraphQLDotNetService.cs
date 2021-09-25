@@ -53,7 +53,7 @@ public class GraphQLDotNetService : IGraphQLService {
 		}
 
 		var objectGraphType = (ObjectGraphType)graphType;
-		objectGraphType.Field("id", new UIntGraphType(), resolve: context => {
+		objectGraphType.Field("rowId", new UIntGraphType(), resolve: context => {
 			var execContext = (ExecutionContext)context.Source!;
 			return execContext.Row?.RowID;
 		});
@@ -65,14 +65,15 @@ public class GraphQLDotNetService : IGraphQLService {
 			Name = fieldType.Name,
 			ResolvedType = fieldType.ResolvedType,
 			Arguments = new QueryArguments(
-				new QueryArgument<NonNullGraphType<UIntGraphType>>() { Name = "id" }
+				new QueryArgument<NonNullGraphType<UIntGraphType>>() { Name = "rowId" }
 			),
 			Resolver = new FuncFieldResolver<object>(context => {
-				var id = context.GetArgument<uint>("id");
+				var rowId = context.GetArgument<uint>("rowId");
+				// TODO: subrow
 
 				var execContext = (ExecutionContext)context.Source!;
 				execContext.Sheet = sheet;
-				execContext.Row = sheet.GetRow(id);
+				execContext.Row = sheet.GetRow(rowId);
 
 				return fieldType.Resolver is null
 					? context

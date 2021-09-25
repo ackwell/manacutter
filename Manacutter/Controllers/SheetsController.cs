@@ -37,12 +37,10 @@ public class SheetsController : ControllerBase {
 
 		// TODO: lookup properly
 		var definitionProvider = this.definitionProviders.First();
-		//var sheetReader = definitionProvider.GetReader(sheetName);
 		// TODO: this might be service territory
 		var rootNode = definitionProvider.GetRootNode(sheetName);
 
+		// TODO: expose row/subrow ids
 		return this.Ok(row.Read(rootNode));
-
-		//return this.Ok(sheetReader.Read(rowParser));
 	}
 }
