@@ -63,16 +63,69 @@ public class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 		// TODO: ref should probably come from controller in some manner.
 		var sheetDefinition = this.GetDefinition(sheet, "HEAD");
 
-		// TODO: Proper recursive handling
+		// TODO: this is duped with group reader, possibly consolidate
 		var fields = new Dictionary<string, DataNode>();
 		foreach (var column in sheetDefinition.Definitions) {
-			fields.Add(column.Name ?? "TODO", new ScalarNode() {
-				Index = (uint)column.Index,
-				Type = ScalarType.Unknown,
-			});
+			fields.Add(
+				column.Name ?? $"Unnamed{column.Index}",
+				this.ParseDefinition(column, 0)
+			);
 		}
 
 		return new StructNode(fields);
+	}
+
+	private DataNode ParseDefinition(DefinitionEntry definition, uint offset) {
+		return definition.Type switch {
+			null => this.ParseScalarDefinition(definition, offset),
+			"repeat" => this.ParseRepeatDefinition(definition, offset),
+			"group" => this.ParseGroupDefinition(definition, offset),
+			_ => throw new ArgumentException($"Unknown definition type {definition.Type} at index {definition.Index}."),
+		};
+	}
+
+	private DataNode ParseScalarDefinition(DefinitionEntry definition, uint offset) {
+		return new ScalarNode() {
+			Offset = definition.Index + offset,
+		};
+	}
+
+	private DataNode ParseRepeatDefinition(DefinitionEntry definition, uint offset) {
+		if (
+			definition.Definition is null
+			|| definition.Count is null
+		) {
+			throw new ArgumentException($"Invalid repeat definition.");
+		}
+
+		return new ArrayNode(
+			this.ParseDefinition(definition.Definition, 0),
+			(uint)definition.Count
+		) {
+			Offset = definition.Index + offset,
+		};
+	}
+
+	private DataNode ParseGroupDefinition(DefinitionEntry definition, uint offset) {
+		if (definition.Members is null) {
+			throw new ArgumentException($"Invalid group definition.");
+		}
+
+		var fields = new Dictionary<string, DataNode>();
+		uint size = 0;
+		foreach (var member in definition.Members) {
+			var node = this.ParseDefinition(member, size);
+
+			fields.Add(
+				member.Name ?? $"Unnamed{member.Index}",
+				node
+			);
+
+			size += node.Size;
+		}
+		return new StructNode(fields) {
+			Offset = definition.Index + offset,
+		};
 	}
 
 	private SheetDefinition GetDefinition(string sheet, string reference) {

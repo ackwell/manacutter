@@ -130,7 +130,7 @@ public class GraphQLDotNetService : IGraphQLService {
 		// If the node type wasn't provided by the definition, check the reader
 		// TODO: If this needs doing in 2+ places, may be better off doing a one-off hydrate per sheet instance.
 		var columnType = node.Type == ScalarType.Unknown
-			? sheet.GetColumn(node.Index).Type
+			? sheet.GetColumn(node.Offset).Type
 			: node.Type;
 
 		// If it's an unknown type, we shortcut with an explicit unknown handler

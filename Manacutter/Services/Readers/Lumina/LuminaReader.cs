@@ -107,27 +107,44 @@ public class LuminaRowReader : IRowReader {
 
 	public uint RowID { get => this.rowParser.Row; }
 
+	// TODO: If the offset idea works out, promote it to the interface?
 	public object Read(DataNode node) {
+		return this.Read(node, 0);
+	}
+
+	private object Read(DataNode node, uint offset) {
 		// TODO: this is going to be a pretty common structure. Possibly make it a mixin... somehow?
 		return node switch {
-			StructNode structNode => this.ReadStruct(structNode),
-			ScalarNode scalarNode => this.ReadScalar(scalarNode),
+			StructNode structNode => this.ReadStruct(structNode, offset),
+			ArrayNode arrayNode => this.ReadArray(arrayNode, offset),
+			ScalarNode scalarNode => this.ReadScalar(scalarNode, offset),
 			// TODO: Can we avoid this to make the exhaustiveness checking compile time?
 			_ => throw new NotImplementedException(),
 		};
 	}
 
-	private object ReadStruct(StructNode node) {
+	private object ReadStruct(StructNode node, uint offset) {
 		return node.Fields.ToDictionary(
 			pair => pair.Key,
-			pair => this.Read(pair.Value)
+			pair => this.Read(pair.Value, offset + node.Offset)
 		);
 	}
 
-	private object ReadScalar(ScalarNode node) {
-		var value = this.rowParser.ReadColumnRaw((int)node.Index);
+	private object ReadArray(ArrayNode node, uint offset) {
+		var elementWidth = node.Type.Size;
+
+		var value = new List<object>();
+		for (uint index = 0; index < node.Count; index++) {
+			var elementOffset = index * elementWidth;
+			value.Add(this.Read(node.Type, offset + node.Offset + elementOffset));
+		}
+		return value;
+	}
+
+	private object ReadScalar(ScalarNode node, uint offset) {
+		var value = this.rowParser.ReadColumnRaw((int)(offset + node.Offset));
 		// TODO: Will probably need slightly more involved logic for SeString in the long run.
-		if (this.rowParser.Sheet.Columns[node.Index].Type == ExcelColumnDataType.String) {
+		if (this.rowParser.Sheet.Columns[node.Offset].Type == ExcelColumnDataType.String) {
 			value = value.ToString()!;
 		}
 		return value;

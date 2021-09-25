@@ -1,12 +1,20 @@
 ﻿namespace Manacutter.Types;
 
 public abstract class DataNode {
-	// TODO: Work out how this will interact with arrays and so on
-	public uint Index { get; init; }
+	public uint Offset { get; init; } = 0;
+
+	public abstract uint Size { get; }
 }
 
 public class StructNode : DataNode {
 	public IDictionary<string, DataNode> Fields { get; }
+
+	public override uint Size {
+		get => this.Fields.Values.Aggregate(
+			(uint)0,
+			(size, node) => size + node.Size
+		);
+	}
 
 	public StructNode(
 		IDictionary<string, DataNode> fields
@@ -15,8 +23,27 @@ public class StructNode : DataNode {
 	}
 }
 
+public class ArrayNode : DataNode {
+	public DataNode Type { get; }
+	public uint Count { get; }
+
+	public override uint Size {
+		get => this.Type.Size * this.Count;
+	}
+
+	public ArrayNode(
+		DataNode type,
+		uint length
+	) {
+		this.Type = type;
+		this.Count = length;
+	}
+}
+
 public class ScalarNode : DataNode {
-	public ScalarType Type { get; init; }
+	public ScalarType Type { get; init; } = ScalarType.Unknown;
+
+	public override uint Size { get => 1; }
 }
 
 public enum ScalarType {
