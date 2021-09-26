@@ -12,18 +12,21 @@ public record NodeWalkerContext {
 }
 
 public abstract class NodeWalker<TContext, TReturn> : INodeVisitor<TContext, TReturn> where TContext : NodeWalkerContext {
+	public TReturn Visit(DataNode node, TContext context) {
+		return node.Accept(this, context);
+	}
 	public abstract TReturn VisitStruct(StructNode node, TContext context);
 	protected IDictionary<string, TReturn> WalkStruct(StructNode node, TContext context) {
 		return node.Fields.ToDictionary(
 			pair => pair.Key,
-			pair => pair.Value.Accept(this, context with {
+			pair => this.Visit(pair.Value, context with {
 				Offset = context.Offset + pair.Value.Offset
 			})
 		);
 	}
 	public abstract TReturn VisitArray(ArrayNode node, TContext context);
 	protected TReturn WalkArray(ArrayNode node, TContext context) {
-		return node.Type.Accept(this, context with {
+		return this.Visit(node.Type, context with {
 			Offset = context.Offset + node.Type.Offset
 		});
 	}

@@ -1,6 +1,6 @@
-﻿using Manacutter.Types;
-using Lumina.Data.Structs.Excel;
+﻿using Lumina.Data.Structs.Excel;
 using Lumina.Excel;
+using Manacutter.Types;
 
 namespace Manacutter.Services.Readers.Lumina;
 
@@ -16,11 +16,11 @@ public class LuminaNodeWalker : NodeWalker<NodeWalkerContext, object>, IRowReade
 	}
 
 	public object Read(DataNode node, uint offset) {
-		return node.Accept(this, new NodeWalkerContext() { Offset = offset });
+		return this.Visit(node, new NodeWalkerContext() { Offset = offset });
 	}
 
 	public override object VisitStruct(StructNode node, NodeWalkerContext context) {
-		return this.WalkStruct(node, context with { 
+		return this.WalkStruct(node, context with {
 			Offset = context.Offset// + node.Offset
 		});
 	}
