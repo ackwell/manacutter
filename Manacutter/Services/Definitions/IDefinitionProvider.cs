@@ -1,4 +1,4 @@
-﻿using Manacutter.Types;
+﻿using Manacutter.Definitions;
 
 namespace Manacutter.Services.Definitions;
 
@@ -7,5 +7,5 @@ public interface IDefinitionProvider {
 
 	public Task Initialize();
 
-	public DataNode GetRootNode(string sheet);
+	public DefinitionNode GetRootNode(string sheet);
 }

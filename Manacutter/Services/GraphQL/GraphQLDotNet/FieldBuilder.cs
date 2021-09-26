@@ -1,12 +1,12 @@
 ﻿using GraphQL;
 using GraphQL.Resolvers;
 using GraphQL.Types;
+using Manacutter.Definitions;
 using Manacutter.Services.Readers;
-using Manacutter.Types;
 
 namespace Manacutter.Services.GraphQL.GraphQLDotNet;
 
-public record FieldBuilderContext : NodeWalkerContext {
+public record FieldBuilderContext : DefinitionWalkerContext {
 	public ISheetReader Sheet { get; }
 
 	public FieldBuilderContext(ISheetReader sheet) {
@@ -14,7 +14,7 @@ public record FieldBuilderContext : NodeWalkerContext {
 	}
 }
 
-public class FieldBuilder : NodeWalker<FieldBuilderContext, FieldType> {
+public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
 	public override FieldType VisitStruct(StructNode node, FieldBuilderContext context) {
 		var type = new ObjectGraphType();
 

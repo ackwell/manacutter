@@ -1,10 +1,10 @@
 ﻿using Lumina.Data.Structs.Excel;
 using Lumina.Excel;
-using Manacutter.Types;
+using Manacutter.Definitions;
 
 namespace Manacutter.Services.Readers.Lumina;
 
-public class LuminaNodeWalker : NodeWalker<NodeWalkerContext, object>, IRowReader {
+public class LuminaNodeWalker : DefinitionWalker<DefinitionWalkerContext, object>, IRowReader {
 	private readonly RowParser rowParser;
 
 	public uint RowID { get => this.rowParser.Row; }
@@ -15,15 +15,15 @@ public class LuminaNodeWalker : NodeWalker<NodeWalkerContext, object>, IRowReade
 		this.rowParser = rowParser;
 	}
 
-	public object Read(DataNode node, uint offset) {
-		return this.Visit(node, new NodeWalkerContext() { Offset = offset });
+	public object Read(DefinitionNode node, uint offset) {
+		return this.Visit(node, new DefinitionWalkerContext() { Offset = offset });
 	}
 
-	public override object VisitStruct(StructNode node, NodeWalkerContext context) {
+	public override object VisitStruct(StructNode node, DefinitionWalkerContext context) {
 		return this.WalkStruct(node, context);
 	}
 
-	public override object VisitArray(ArrayNode node, NodeWalkerContext context) {
+	public override object VisitArray(ArrayNode node, DefinitionWalkerContext context) {
 		var baseOffset = context.Offset;
 		var elementWidth = node.Type.Size;
 
@@ -36,7 +36,7 @@ public class LuminaNodeWalker : NodeWalker<NodeWalkerContext, object>, IRowReade
 		return value;
 	}
 
-	public override object VisitScalar(ScalarNode node, NodeWalkerContext context) {
+	public override object VisitScalar(ScalarNode node, DefinitionWalkerContext context) {
 		var index = context.Offset;
 		var value = this.rowParser.ReadColumnRaw((int)index);
 		var column = this.rowParser.Sheet.Columns[index];
