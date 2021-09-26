@@ -3,11 +3,14 @@ using GraphQL.Resolvers;
 using GraphQL.Types;
 using Manacutter.Definitions;
 using Manacutter.Services.Readers;
+using System.Collections.Immutable;
+using System.Text.RegularExpressions;
 
 namespace Manacutter.Services.GraphQL.GraphQLDotNet;
 
 public record FieldBuilderContext : DefinitionWalkerContext {
 	public ISheetReader Sheet { get; }
+	public ImmutableList<string> Path { get; init; } = ImmutableList<string>.Empty;
 
 	public FieldBuilderContext(ISheetReader sheet) {
 		this.Sheet = sheet;
@@ -15,27 +18,24 @@ public record FieldBuilderContext : DefinitionWalkerContext {
 }
 
 public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
+	private static string SanitizeName(string name) {
+		// TODO: improve?
+		return Regex.Replace(name, @"\W", "");
+	}
+
 	public override FieldType VisitStruct(StructNode node, FieldBuilderContext context) {
-		var type = new ObjectGraphType();
+		var type = new ObjectGraphType() {
+			Name = string.Join('_', context.Path)
+		};
 
-		foreach (var pair in this.WalkStruct(node, context)) {
-			// TODO: lmao
-			var name = pair.Key
-				.Replace('{', '_').Replace('}', '_')
-				.Replace('<', '_').Replace('>', '_');
-
-			var fieldType = pair.Value;
-			fieldType.Name = name;
-			// TODO: this should be prefixed with parent names to prevent cross-sheet collisions
-			// TODO: this.. really should be in the return, not modified afterwards
-			var childType = fieldType.ResolvedType?.GetNamedType();
-			if (childType is ObjectGraphType) {
-				childType.Name = name;
-			}
-			type.AddField(fieldType);
+		foreach (var pair in this.WalkStruct(node, context, (context, name, _) => context with {
+			Path = context.Path.Add(SanitizeName(name))
+		})) {
+			type.AddField(pair.Value);
 		}
 
 		return new FieldType() {
+			Name = context.Path.Last(),
 			ResolvedType = type,
 			Resolver = new FuncFieldResolver<object>(context => {
 				var executionContext = (ExecutionContext)context.Source!;
@@ -54,6 +54,7 @@ public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
 		var fieldType = this.WalkArray(node, context);
 
 		return new FieldType() {
+			Name = context.Path.Last(),
 			ResolvedType = new ListGraphType(fieldType.ResolvedType),
 			Resolver = new FuncFieldResolver<object>(context => {
 				var executionContext = (ExecutionContext)context.Source!;
@@ -76,6 +77,8 @@ public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
 	}
 
 	public override FieldType VisitScalar(ScalarNode node, FieldBuilderContext context) {
+		var fieldName = context.Path.Last();
+
 		// If the node type wasn't provided by the definition, check the reader
 		// TODO: If this needs doing in 2+ places, may be better off doing a one-off hydrate per sheet instance.
 		var columnType = node.Type == ScalarType.Unknown
@@ -85,6 +88,7 @@ public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
 		// If it's an unknown type, we shortcut with an explicit unknown handler
 		if (columnType == ScalarType.Unknown) {
 			return new FieldType() {
+				Name = fieldName,
 				ResolvedType = new StringGraphType(),
 				Resolver = new FuncFieldResolver<object>(context => "UNKNOWN TYPE"),
 			};
@@ -106,6 +110,7 @@ public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
 		};
 
 		return new FieldType() {
+			Name = fieldName,
 			ResolvedType = graphType,
 			Resolver = new FuncFieldResolver<object>(context => {
 				var execContext = (ExecutionContext)context.Source!;

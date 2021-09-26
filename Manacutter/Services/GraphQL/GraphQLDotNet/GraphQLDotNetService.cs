@@ -4,6 +4,7 @@ using GraphQL.SystemTextJson;
 using GraphQL.Types;
 using Manacutter.Services.Definitions;
 using Manacutter.Services.Readers;
+using System.Collections.Immutable;
 using System.Text.Json;
 
 namespace Manacutter.Services.GraphQL.GraphQLDotNet;
@@ -32,9 +33,9 @@ public class GraphQLDotNetService : IGraphQLService {
 			var sheetNode = definitionProvider.GetRootNode(sheetName);
 
 			// Build & name the core field type for the sheet
-			//var fieldType = this.BuildFieldType(sheetNode, sheet, 0);
-			var fieldType = builder.Visit(sheetNode, new FieldBuilderContext(sheet));
-			fieldType.Name = sheetName;
+			var fieldType = builder.Visit(sheetNode, new FieldBuilderContext(sheet) {
+				Path = ImmutableList.Create(sheetName)
+			});
 			if (fieldType.ResolvedType is not null) {
 				fieldType.ResolvedType.Name = sheetName;
 				this.AddIDFields(fieldType.ResolvedType);

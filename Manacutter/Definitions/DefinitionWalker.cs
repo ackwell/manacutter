@@ -14,12 +14,23 @@ public abstract class DefinitionWalker<TContext, TReturn>
 
 	public abstract TReturn VisitStruct(StructNode node, TContext context);
 
-	protected IDictionary<string, TReturn> WalkStruct(StructNode node, TContext context) {
+	// TODO: I'm not sure how happy I am about this optional param. Investigate alternatives.
+	protected IDictionary<string, TReturn> WalkStruct(
+		StructNode node,
+		TContext context,
+		Func<TContext, string, DefinitionNode, TContext>? contextTransform = null
+	) {
 		return node.Fields.ToDictionary(
 			pair => pair.Key,
-			pair => this.Visit(pair.Value, context with {
-				Offset = context.Offset + pair.Value.Offset
-			})
+			pair => {
+				var newContext = context with {
+					Offset = context.Offset + pair.Value.Offset
+				};
+				if (contextTransform is not null) {
+					newContext = contextTransform(newContext, pair.Key, pair.Value);
+				}
+				return this.Visit(pair.Value, newContext);
+			}
 		);
 	}
 

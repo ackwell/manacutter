@@ -7,13 +7,13 @@ namespace Manacutter.Services.Readers.Lumina;
 public class LuminaNodeWalker : DefinitionWalker<DefinitionWalkerContext, object>, IRowReader {
 	private readonly RowParser rowParser;
 
-	public uint RowID { get => this.rowParser.Row; }
-
 	public LuminaNodeWalker(
 		RowParser rowParser
 	) {
 		this.rowParser = rowParser;
 	}
+
+	public uint RowID { get => this.rowParser.Row; }
 
 	public object Read(DefinitionNode node, uint offset) {
 		return this.Visit(node, new DefinitionWalkerContext() { Offset = offset });
