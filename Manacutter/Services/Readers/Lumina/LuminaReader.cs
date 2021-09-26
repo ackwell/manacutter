@@ -49,7 +49,8 @@ public class LuminaSheetReader : ISheetReader {
 			return null;
 		}
 
-		return new LuminaRowReader(rowParser);
+		//return new LuminaRowReader(rowParser);
+		return new LuminaNodeWalker(rowParser);
 	}
 }
 

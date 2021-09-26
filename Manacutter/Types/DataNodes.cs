@@ -1,11 +1,43 @@
 ﻿namespace Manacutter.Types;
 
+// TODO: this should be elsewhere
+public interface INodeVisitor<TContext, TReturn> {
+	public TReturn VisitStruct(StructNode node, TContext context);
+	public TReturn VisitArray(ArrayNode node, TContext context);
+	public TReturn VisitScalar(ScalarNode node, TContext context);
+}
+
+public record NodeWalkerContext {
+	public uint Offset { get; init; }
+}
+
+public abstract class NodeWalker<TContext, TReturn> : INodeVisitor<TContext, TReturn> where TContext : NodeWalkerContext {
+	public abstract TReturn VisitStruct(StructNode node, TContext context);
+	protected IDictionary<string, TReturn> WalkStruct(StructNode node, TContext context) {
+		return node.Fields.ToDictionary(
+			pair => pair.Key,
+			pair => pair.Value.Accept(this, context with {
+				Offset = context.Offset + pair.Value.Offset
+			})
+		);
+	}
+	public abstract TReturn VisitArray(ArrayNode node, TContext context);
+	protected TReturn WalkArray(ArrayNode node, TContext context) {
+		return node.Type.Accept(this, context with {
+			Offset = context.Offset + node.Type.Offset
+		});
+	}
+	public abstract TReturn VisitScalar(ScalarNode node, TContext context);
+}
+
 public abstract class DataNode {
 	/// <summary>Column offset within this node's parent.</summary>
 	public uint Offset { get; init; } = 0;
 
 	/// <summary>Size of this node, in columns.</summary>
 	public abstract uint Size { get; }
+
+	public abstract TReturn Accept<TContext, TReturn>(INodeVisitor<TContext, TReturn> visitor, TContext context);
 }
 
 public class StructNode : DataNode {
@@ -22,6 +54,10 @@ public class StructNode : DataNode {
 		IDictionary<string, DataNode> fields
 	) {
 		this.Fields = fields;
+	}
+
+	public override TReturn Accept<TContext, TReturn>(INodeVisitor<TContext, TReturn> visitor, TContext context) {
+		return visitor.VisitStruct(this, context);
 	}
 }
 
@@ -40,12 +76,20 @@ public class ArrayNode : DataNode {
 		this.Type = type;
 		this.Count = length;
 	}
+
+	public override TReturn Accept<TContext, TReturn>(INodeVisitor<TContext, TReturn> visitor, TContext context) {
+		return visitor.VisitArray(this, context);
+	}
 }
 
 public class ScalarNode : DataNode {
 	public ScalarType Type { get; init; } = ScalarType.Unknown;
 
 	public override uint Size { get => 1; }
+
+	public override TReturn Accept<TContext, TReturn>(INodeVisitor<TContext, TReturn> visitor, TContext context) {
+		return visitor.VisitScalar(this, context);
+	}
 }
 
 public enum ScalarType {

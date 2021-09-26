@@ -202,7 +202,7 @@ public class GraphQLDotNetService : IGraphQLService {
 				var execContext = (ExecutionContext)context.Source!;
 				// This is not including the offset, as it's added by the reader
 				// TODO: The above seems janky, in a way. Think about it.
-				return execContext.Row?.Read(node, execContext.Offset);
+				return execContext.Row?.Read(node, execContext.Offset + node.Offset);
 			}),
 		};
 	}
