@@ -118,6 +118,12 @@ public class GraphQLDotNetService : IGraphQLService {
 
 			var fieldType = this.BuildFieldType(field.Value, sheet, offset + node.Offset);
 			fieldType.Name = name;
+			// TODO: this should be prefixed with parent names to prevent cross-sheet collisions
+			// TODO: this.. really should be in the return, not modified afterwards
+			var childType = fieldType.ResolvedType?.GetNamedType();
+			if (childType is ObjectGraphType) {
+				childType.Name = name;
+			}
 			type.AddField(fieldType);
 		}
 
