@@ -210,7 +210,7 @@ public class ExecutionContext {
 }
 
 public class GraphQLDotNetSchema : IGraphQLSchema {
-	private Schema schema;
+	private readonly Schema schema;
 
 	public GraphQLDotNetSchema(
 		ObjectGraphType rootGraphType

@@ -1,6 +1,5 @@
 ﻿using Manacutter.Types;
 using Microsoft.Extensions.Options;
-using System.Text;
 using System.Text.Json;
 using Git = LibGit2Sharp;
 
@@ -126,7 +125,7 @@ public class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 
 			size += childNode.Size;
 		}
-		
+
 		var node = new StructNode(fields) {
 			Offset = definition.Index + offset,
 		};

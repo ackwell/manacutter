@@ -29,7 +29,7 @@ public class LuminaReader : IReader {
 }
 
 public class LuminaSheetReader : ISheetReader {
-	private ExcelSheetImpl sheet;
+	private readonly ExcelSheetImpl sheet;
 
 	public LuminaSheetReader(
 		ExcelSheetImpl sheet
@@ -97,7 +97,7 @@ public class LuminaColumnInfo : IColumnInfo {
 }
 
 public class LuminaRowReader : IRowReader {
-	private RowParser rowParser;
+	private readonly RowParser rowParser;
 
 	public LuminaRowReader(
 		RowParser rowParser
