@@ -23,6 +23,7 @@ public class GraphQLDotNetService : IGraphQLService {
 		// TODO: Get this from... something. It's a tossup between reader (as it's the source of truth for game data), and definitions (as it's the source of truth for what we can read). Leaning towards the latter currently, which will require some interface additions.
 		// TODO: sheet name needs standardisation across the board on stuff like caps.
 		var sheetNames = new[] { "Action", "Item" };
+		var builder = new FieldBuilder();
 
 		var graphType = new ObjectGraphType() { Name = "Query" };
 
@@ -32,7 +33,8 @@ public class GraphQLDotNetService : IGraphQLService {
 			var sheetNode = definitionProvider.GetRootNode(sheetName);
 
 			// Build & name the core field type for the sheet
-			var fieldType = this.BuildFieldType(sheetNode, sheet, 0);
+			//var fieldType = this.BuildFieldType(sheetNode, sheet, 0);
+			var fieldType = builder.Visit(sheetNode, new FieldBuilderContext(sheet));
 			fieldType.Name = sheetName;
 			if (fieldType.ResolvedType is not null) {
 				fieldType.ResolvedType.Name = sheetName;
