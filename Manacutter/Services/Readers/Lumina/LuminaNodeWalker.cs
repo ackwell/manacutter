@@ -20,13 +20,11 @@ public class LuminaNodeWalker : NodeWalker<NodeWalkerContext, object>, IRowReade
 	}
 
 	public override object VisitStruct(StructNode node, NodeWalkerContext context) {
-		return this.WalkStruct(node, context with {
-			Offset = context.Offset// + node.Offset
-		});
+		return this.WalkStruct(node, context);
 	}
 
 	public override object VisitArray(ArrayNode node, NodeWalkerContext context) {
-		var baseOffset = context.Offset;// + node.Offset;
+		var baseOffset = context.Offset;
 		var elementWidth = node.Type.Size;
 
 		var value = new List<object>();
@@ -39,7 +37,7 @@ public class LuminaNodeWalker : NodeWalker<NodeWalkerContext, object>, IRowReade
 	}
 
 	public override object VisitScalar(ScalarNode node, NodeWalkerContext context) {
-		var index = context.Offset;// + node.Offset;
+		var index = context.Offset;
 		var value = this.rowParser.ReadColumnRaw((int)index);
 		var column = this.rowParser.Sheet.Columns[index];
 
