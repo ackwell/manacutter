@@ -185,14 +185,17 @@ public class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 			throw new ArgumentException($"Commit reference {reference} could not be resolved.");
 		}
 
-		// TODO: This will have casing issues &c. Will probably want to cache sheet (lower) -> filename per ref.
+		// TODO: This should probably be cached on some basis
 		// TODO: If we go back far enough, the coinach definitions were one massive json file - do we give a shit?
 		// TODO: Is it worth checking the name field in the json files or is it always the same? Check coinach src I guess.
+		var searchFor = $"{sheet.ToLowerInvariant()}.json";
 		var content = commit
-			[$"SaintCoinach/Definitions/{sheet}.json"]?
+			["SaintCoinach/Definitions"]
+			.Target
+			.Peel<Git.Tree>()
+			.FirstOrDefault(entry => entry.Name.ToLowerInvariant() == searchFor)?
 			.Target
 			.Peel<Git.Blob>()
-			// TODO: Probably should be using streams or something.
 			.GetContentText();
 
 		if (content is null) {

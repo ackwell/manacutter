@@ -18,7 +18,7 @@ public class GraphQLDotNetService : IGraphQLService {
 	public IGraphQLSchema GetSchema(IDefinitionProvider definitionProvider) {
 		// TODO: Get this from... something. It's a tossup between reader (as it's the source of truth for game data), and definitions (as it's the source of truth for what we can read). Leaning towards the latter currently, which will require some interface additions.
 		// TODO: sheet name needs standardisation across the board on stuff like caps.
-		var sheetNames = new[] { "Action", "Item" };
+		var sheetNames = new[] { "action", "item" };
 		var builder = new FieldBuilder();
 
 		var graphType = new ObjectGraphType() { Name = "Query" };
