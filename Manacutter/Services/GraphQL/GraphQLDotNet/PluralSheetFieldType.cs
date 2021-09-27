@@ -12,12 +12,21 @@ public class PluralSheetFieldType : FieldType {
 		this.Name = $"{baseField.Name}_plural";
 		this.ResolvedType = new ListGraphType(baseField.ResolvedType);
 		this.Resolver = new FuncFieldResolver<object>(context => {
-			// TODO: This is currently not calling down to the base field resolver. It should be. Fix.
-
 			// TODO: Temp testing stuff
 			var execContexts = context.ArrayPool.Rent<ExecutionContext>(2);
-			execContexts[0] = new ExecutionContext() { Sheet = sheet, Row = sheet.GetRow(1) };
-			execContexts[1] = new ExecutionContext() { Sheet = sheet, Row = sheet.GetRow(2) };
+
+			for (uint index = 0; index <= 1; index++) {
+				var newContext = new ResolveFieldContext<ExecutionContext>(context);
+				var newSource = newContext.Source! with {
+					Sheet = sheet,
+					Row = sheet.GetRow(index + 10)
+				};
+				newContext.Source = newSource;
+				execContexts[index] = baseField.Resolver is null
+					? newSource
+					: (ExecutionContext)baseField.Resolver.Resolve(newContext)!;
+			}
+
 			return execContexts.Constrained(2);
 		});
 	}

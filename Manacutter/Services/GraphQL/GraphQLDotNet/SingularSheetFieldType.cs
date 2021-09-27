@@ -16,14 +16,15 @@ public class SingularSheetFieldType : FieldType {
 		this.Resolver = new FuncFieldResolver<object>(context => {
 			var rowId = context.GetArgument<uint>("rowId");
 
-			// TODO: this is mutating. That's bad.
-			var execContext = (ExecutionContext)context.Source!;
-			execContext.Sheet = sheet;
-			execContext.Row = sheet.GetRow(rowId);
+			var newContext = new ResolveFieldContext<ExecutionContext>(context);
+			newContext.Source = newContext.Source! with {
+				Sheet = sheet,
+				Row = sheet.GetRow(rowId),
+			};
 
 			return baseField.Resolver is null
-				? context
-				: baseField.Resolver.Resolve(context);
+				? newContext
+				: baseField.Resolver.Resolve(newContext);
 		});
 	}
 }

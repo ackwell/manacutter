@@ -39,13 +39,8 @@ public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
 			ResolvedType = type,
 			Resolver = new FuncFieldResolver<object>(context => {
 				var executionContext = (ExecutionContext)context.Source!;
-				// TODO: might be worth making a copy method for this
-				return new ExecutionContext() {
-					Sheet = executionContext.Sheet,
-					Row = executionContext.Row,
-					// TODO: this should be using the walker context offset
-					Offset = executionContext.Offset + node.Offset,
-				};
+				// TODO: this should be using the walker context offset
+				return executionContext with { Offset = executionContext.Offset + node.Offset };
 			})
 		};
 	}
@@ -64,9 +59,7 @@ public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
 				var execContexts = context.ArrayPool.Rent<ExecutionContext>((int)node.Count);
 				for (int index = 0; index < node.Count; index++) {
 					var elementOffset = index * elementWidth;
-					execContexts[index] = new ExecutionContext() {
-						Sheet = executionContext.Sheet,
-						Row = executionContext.Row,
+					execContexts[index] = executionContext with {
 						Offset = (uint)(baseOffset + elementOffset),
 					};
 				}
@@ -114,8 +107,6 @@ public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
 			ResolvedType = graphType,
 			Resolver = new FuncFieldResolver<object>(context => {
 				var execContext = (ExecutionContext)context.Source!;
-				// This is not including the offset, as it's added by the reader
-				// TODO: The above seems janky, in a way. Think about it.
 				return execContext.Row?.Read(node, execContext.Offset + node.Offset);
 			}),
 		};
