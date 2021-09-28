@@ -1,4 +1,5 @@
 ﻿using Manacutter.Definitions;
+using Manacutter.Services.Definitions.Middleware;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 using Git = LibGit2Sharp;
@@ -72,8 +73,12 @@ public class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 				node
 			);
 		}
+		var rootNode = new StructNode(fields);
 
-		return new StructNode(fields);
+		// TODO: this should be handled by a top level method in the service structure. also, like, DI. and stuff.
+		var collapseSimple = new CollapseSimple();
+		var processed = collapseSimple.Visit(rootNode, new DefinitionWalkerContext());
+		return processed;
 	}
 
 	private (DefinitionNode, string?) ParseDefinition(DefinitionEntry definition, uint offset) {
