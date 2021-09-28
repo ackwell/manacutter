@@ -1,6 +1,6 @@
 ﻿namespace Manacutter.Definitions;
 
-public abstract class DefinitionNode {
+public abstract record DefinitionNode {
 	/// <summary>Column offset within this node's parent.</summary>
 	public uint Offset { get; init; } = 0;
 

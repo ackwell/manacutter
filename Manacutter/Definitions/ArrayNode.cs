@@ -1,11 +1,11 @@
 ﻿namespace Manacutter.Definitions;
 
 /// <summary>Representation of an array of one or more columns with repeated semantics.</summary>
-public class ArrayNode : DefinitionNode {
+public record ArrayNode : DefinitionNode {
 	/// <summary>Node representing the type of column(s) in the array.</summary>
-	public DefinitionNode Type { get; }
+	public DefinitionNode Type { get; init; }
 	/// <summary>Number of elements in the array.</summary>
-	public uint Count { get; }
+	public uint Count { get; init; }
 
 	public ArrayNode(
 		DefinitionNode type,

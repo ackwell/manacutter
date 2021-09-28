@@ -17,7 +17,7 @@ public enum ScalarType {
 }
 
 /// <summary>Representation of a single column with a scalar value.</summary>
-public class ScalarNode : DefinitionNode {
+public record ScalarNode : DefinitionNode {
 	/// <summary>Excel type of this column.</summary>
 	public ScalarType Type { get; init; } = ScalarType.Unknown;
 
