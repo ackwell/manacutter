@@ -1,6 +1,8 @@
 ﻿namespace Manacutter.Definitions;
 
+/// <summary> Representation of a group of named nodes.</summary>
 public class StructNode : DefinitionNode {
+	/// <summary>Mapping of names to their associated node trees.</summary>
 	public IDictionary<string, DefinitionNode> Fields { get; }
 
 	public StructNode(

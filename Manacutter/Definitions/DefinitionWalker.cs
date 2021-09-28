@@ -1,6 +1,8 @@
 ﻿namespace Manacutter.Definitions;
 
+/// <summary>Base visiting context maintained by the definition walker.</summary>
 public record DefinitionWalkerContext {
+	/// <summary>Current column offset.</summary>
 	public uint Offset { get; init; }
 }
 
@@ -15,6 +17,11 @@ public abstract class DefinitionWalker<TContext, TReturn>
 	public abstract TReturn VisitStruct(StructNode node, TContext context);
 
 	// TODO: I'm not sure how happy I am about this optional param. Investigate alternatives.
+	/// <summary>Walk the provided struct node, visiting all children.</summary>
+	/// <param name="node">The struct node to walk.</param>
+	/// <param name="context">Visiting context.</param>
+	/// <param name="contextTransform">Transformation to apply to the visiting context on a per-field basis.</param>
+	/// <returns>Visitor results mapped to their field names.</returns>
 	protected IDictionary<string, TReturn> WalkStruct(
 		StructNode node,
 		TContext context,
@@ -36,6 +43,10 @@ public abstract class DefinitionWalker<TContext, TReturn>
 
 	public abstract TReturn VisitArray(ArrayNode node, TContext context);
 
+	/// <summary>Walk the provided array node, visiting the child node.</summary>
+	/// <param name="node">The array node to walk.</param>
+	/// <param name="context">Visiting context.</param>
+	/// <returns>Visitor result.</returns>
 	protected TReturn WalkArray(ArrayNode node, TContext context) {
 		return this.Visit(node.Type, context with {
 			Offset = context.Offset + node.Type.Offset

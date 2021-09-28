@@ -1,5 +1,6 @@
 ﻿namespace Manacutter.Definitions;
 
+/// <summary>Data type stored within an excel scalar column.</summary>
 public enum ScalarType {
 	Unknown = 0,
 	String,
@@ -15,7 +16,9 @@ public enum ScalarType {
 	Float,
 }
 
+/// <summary>Representation of a single column with a scalar value.</summary>
 public class ScalarNode : DefinitionNode {
+	/// <summary>Excel type of this column.</summary>
 	public ScalarType Type { get; init; } = ScalarType.Unknown;
 
 	public override uint Size { get => 1; }
