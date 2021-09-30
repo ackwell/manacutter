@@ -9,6 +9,8 @@ namespace Microsoft.Extensions.DependencyInjection {
 
 			services.AddHostedService<DefinitionHostedService>();
 
+			services.AddSingleton<DefinitionsService>();
+
 			return services;
 		}
 	}

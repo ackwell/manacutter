@@ -60,6 +60,35 @@ public class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 	}
 
 	// TODO: the results of this function should probably be cached in some manner
+	public SheetsNode GetSheets(string? gitRef) {
+		// TODO: config?
+		gitRef ??= "HEAD";
+
+		// TODO: This is effectively doing a dobule lookup in git. Yuck. Merge this logic with getrootnode and suchforth once migration complete.
+		var commit = this.repository?
+			.Lookup(gitRef, Git.ObjectType.Commit)?
+			.Peel<Git.Commit>();
+
+		if (commit is null) {
+			throw new ArgumentException($"Commit reference {gitRef} could not be resolved.");
+		}
+
+		// TODO: lmao this is disgusting. fix.
+		var sheets = commit
+			["SaintCoinach/Definitions"]
+			.Target
+			.Peel<Git.Tree>()
+			.Where(t => t.Name.EndsWith(".json"))
+			.Select(t => t.Name.Substring(0, t.Name.Length - 5))
+			.ToDictionary(
+				name => name,
+				name => this.GetRootNode(name)
+			);
+
+		return new SheetsNode(sheets);
+	}
+
+	// TODO: the results of this function should probably be cached in some manner
 	public DefinitionNode GetRootNode(string sheet) {
 		// TODO: ref should probably come from controller in some manner.
 		var sheetDefinition = this.GetDefinition(sheet, "HEAD");
