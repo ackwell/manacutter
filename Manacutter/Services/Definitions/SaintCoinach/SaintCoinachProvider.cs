@@ -182,7 +182,7 @@ public class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 	}
 
 	private SheetDefinition GetDefinition(string sheet, string reference) {
-		var commit = repository?
+		var commit = this.repository?
 			.Lookup(reference, Git.ObjectType.Commit)?
 			.Peel<Git.Commit>();
 

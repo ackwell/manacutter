@@ -3,10 +3,10 @@
 /// <summary> Representation of a group of named nodes.</summary>
 public record StructNode : DefinitionNode {
 	/// <summary>Mapping of names to their associated node trees.</summary>
-	public IDictionary<string, DefinitionNode> Fields { get; init; }
+	public IReadOnlyDictionary<string, DefinitionNode> Fields { get; init; }
 
 	public StructNode(
-		IDictionary<string, DefinitionNode> fields
+		IReadOnlyDictionary<string, DefinitionNode> fields
 	) {
 		this.Fields = fields;
 	}

@@ -14,6 +14,22 @@ public abstract class DefinitionWalker<TContext, TReturn>
 		return node.Accept(this, context);
 	}
 
+	public abstract TReturn VisitSheets(SheetsNode node, TContext context);
+
+	/// <summary>Walk the provided sheets node, visiting all sheet definitions.</summary>
+	/// <param name="node">The sheets node to walk.</param>
+	/// <param name="context">Visiting context.</param>
+	/// <returns>Visitor results mapped to their sheet names.</returns>
+	protected IReadOnlyDictionary<string, TReturn> WalkSheets(
+		SheetsNode node,
+		TContext context
+	) {
+		return node.Sheets.ToDictionary(
+			pair => pair.Key,
+			pair => this.Visit(pair.Value, context)
+		);
+	}
+
 	public abstract TReturn VisitStruct(StructNode node, TContext context);
 
 	// TODO: I'm not sure how happy I am about this optional param. Investigate alternatives.
@@ -22,7 +38,7 @@ public abstract class DefinitionWalker<TContext, TReturn>
 	/// <param name="context">Visiting context.</param>
 	/// <param name="contextTransform">Transformation to apply to the visiting context on a per-field basis.</param>
 	/// <returns>Visitor results mapped to their field names.</returns>
-	protected IDictionary<string, TReturn> WalkStruct(
+	protected IReadOnlyDictionary<string, TReturn> WalkStruct(
 		StructNode node,
 		TContext context,
 		Func<TContext, string, DefinitionNode, TContext>? contextTransform = null

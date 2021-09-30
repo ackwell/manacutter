@@ -23,6 +23,10 @@ public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
 		return Regex.Replace(name, @"\W", "");
 	}
 
+	public override FieldType VisitSheets(SheetsNode node, FieldBuilderContext context) {
+		throw new NotImplementedException();
+	}
+
 	public override FieldType VisitStruct(StructNode node, FieldBuilderContext context) {
 		var type = new ObjectGraphType() {
 			Name = string.Join('_', context.Path)
