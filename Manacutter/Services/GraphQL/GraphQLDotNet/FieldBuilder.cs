@@ -20,7 +20,18 @@ public record FieldBuilderContext : DefinitionWalkerContext {
 public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
 	private static string SanitizeName(string name) {
 		// TODO: improve?
-		return Regex.Replace(name, @"\W", "");
+		name = Regex.Replace(name, @"\W", "");
+
+		// Stolen from Adam because, and I quote, "kill me".
+		// TODO: Better way?
+		if (char.IsDigit(name[0])) {
+			var index = name[0] - '0';
+			// const?
+			var lookup = new string[] { "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine" };
+			name = $"{lookup[index]}{name.Substring(1)}";
+		}
+
+		return name;
 	}
 
 	public override FieldType VisitSheets(SheetsNode node, FieldBuilderContext context) {
@@ -79,7 +90,7 @@ public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
 		// If the node type wasn't provided by the definition, check the reader
 		// TODO: If this needs doing in 2+ places, may be better off doing a one-off hydrate per sheet instance.
 		var columnType = node.Type == ScalarType.Unknown
-			? context.Sheet.GetColumn(context.Offset).Type
+			? context.Sheet.GetColumn(context.Offset)?.Type ?? ScalarType.Unknown
 			: node.Type;
 
 		// If it's an unknown type, we shortcut with an explicit unknown handler

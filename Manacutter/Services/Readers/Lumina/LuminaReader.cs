@@ -37,7 +37,11 @@ public class LuminaSheetReader : ISheetReader {
 		this.sheet = sheet;
 	}
 
-	public IColumnInfo GetColumn(uint columnIndex) {
+	public IColumnInfo? GetColumn(uint columnIndex) {
+		if (columnIndex < 0 || columnIndex >= this.sheet.ColumnCount) {
+			return null;
+		}
+
 		return new LuminaColumnInfo() {
 			Definition = this.sheet.Columns[columnIndex]
 		};
@@ -49,7 +53,6 @@ public class LuminaSheetReader : ISheetReader {
 			return null;
 		}
 
-		//return new LuminaRowReader(rowParser);
 		return new LuminaNodeWalker(rowParser);
 	}
 }

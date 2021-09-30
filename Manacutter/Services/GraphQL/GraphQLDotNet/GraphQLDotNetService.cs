@@ -1,5 +1,5 @@
 ﻿using GraphQL.Types;
-using Manacutter.Services.Definitions;
+using Manacutter.Definitions;
 using Manacutter.Services.Readers;
 using System.Collections.Immutable;
 
@@ -15,18 +15,14 @@ public class GraphQLDotNetService : IGraphQLService {
 	}
 
 	// TODO: Cache schemas or something
-	public IGraphQLSchema GetSchema(IDefinitionProvider definitionProvider) {
-		// TODO: Get this from... something. It's a tossup between reader (as it's the source of truth for game data), and definitions (as it's the source of truth for what we can read). Leaning towards the latter currently, which will require some interface additions.
-		// TODO: sheet name needs standardisation across the board on stuff like caps.
-		var sheetNames = new[] { "action", "item" };
+	public IGraphQLSchema GetSchema(SheetsNode sheetsNode) {
 		var builder = new FieldBuilder();
 
 		var graphType = new ObjectGraphType() { Name = "Query" };
 
-		foreach (var sheetName in sheetNames) {
+		foreach (var (sheetName, sheetNode) in sheetsNode.Sheets) {
 			var sheet = this.reader.GetSheet(sheetName);
 			if (sheet is null) { continue; }
-			var sheetNode = definitionProvider.GetRootNode(sheetName);
 
 			// Build the core field type for the sheet
 			// TODO: I feel that the ID fields should be a concern of the field builder. Consider moving them in.

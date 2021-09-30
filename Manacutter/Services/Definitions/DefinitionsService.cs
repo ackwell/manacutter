@@ -2,6 +2,7 @@
 
 namespace Manacutter.Services.Definitions;
 
+// Should this have an interface for mocking purposes &c?
 public class DefinitionsService {
 	private readonly IReadOnlyDictionary<string, IDefinitionProvider> definitions;
 

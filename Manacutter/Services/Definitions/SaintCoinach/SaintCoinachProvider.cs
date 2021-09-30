@@ -1,5 +1,4 @@
 ﻿using Manacutter.Definitions;
-using Manacutter.Services.Definitions.Middleware;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 using Git = LibGit2Sharp;
@@ -105,9 +104,12 @@ public class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 		var rootNode = new StructNode(fields);
 
 		// TODO: this should be handled by a top level method in the service structure. also, like, DI. and stuff.
-		var collapseSimple = new CollapseSimple();
-		var processed = collapseSimple.Visit(rootNode, new DefinitionWalkerContext());
-		return processed;
+		// TODO: Re-enable. In current form, this breaks GQL, as it's collapsing the top-level struct for sheets with one named column.
+		//var collapseSimple = new CollapseSimple();
+		//var processed = collapseSimple.Visit(rootNode, new DefinitionWalkerContext());
+		//return processed;
+
+		return rootNode;
 	}
 
 	private (DefinitionNode, string?) ParseDefinition(DefinitionEntry definition, uint offset) {
