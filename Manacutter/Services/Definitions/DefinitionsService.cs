@@ -28,6 +28,12 @@ public class DefinitionsService {
 		// TODO: Some degree of caching, can apply at this level for the full set
 		// TODO: Ideas like backfilling undefined fields/sheets can become a middleware concern
 
+		// TODO: this should be handled by a top level method in the service structure. also, like, DI. and stuff.
+		// TODO: Re-enable. In current form, this breaks GQL, as it's collapsing the top-level struct for sheets with one named column.
+		//var collapseSimple = new CollapseSimple();
+		//var processed = collapseSimple.Visit(rootNode, new DefinitionWalkerContext());
+		//return processed;
+
 		return sheetRoot;
 	}
 }
