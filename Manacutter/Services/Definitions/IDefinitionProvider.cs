@@ -8,8 +8,4 @@ public interface IDefinitionProvider {
 	public Task Initialize();
 
 	public SheetsNode GetSheets(string? version);
-
-	// TODO: Move to an everything-at-once format.
-	[Obsolete]
-	public DefinitionNode GetRootNode(string sheet);
 }
