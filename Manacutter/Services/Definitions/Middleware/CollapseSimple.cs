@@ -29,7 +29,7 @@ public class CollapseSimple : DefinitionMiddleware {
 		// TODO: How can we avoid this cast?
 		var newNode = (StructNode)base.VisitStruct(node, context);
 
-		if (newNode.Fields.Count > 1) {
+		if (newNode.Fields.Count != 1) {
 			return newNode;
 		}
 
