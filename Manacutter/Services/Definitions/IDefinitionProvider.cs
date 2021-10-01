@@ -7,5 +7,5 @@ public interface IDefinitionProvider {
 
 	public Task Initialize();
 
-	public DefinitionNode GetRootNode(string sheet);
+	public SheetsNode GetSheets(string? version);
 }

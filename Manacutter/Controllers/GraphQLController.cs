@@ -10,23 +10,23 @@ namespace Manacutter.Controllers;
 [Route("[controller]")]
 [ApiController]
 public class GraphQLController : ControllerBase {
-	private readonly IEnumerable<IDefinitionProvider> definitionProviders;
+	private readonly DefinitionsService definitions;
 	private readonly IGraphQLService graphQL;
 
 	public GraphQLController(
-		IEnumerable<IDefinitionProvider> definitionProviders,
+		DefinitionsService definitions,
 		IGraphQLService graphQL
 	) {
+		this.definitions = definitions;
 		this.graphQL = graphQL;
-		this.definitionProviders = definitionProviders;
 	}
 
 	[HttpPost]
 	public async Task<IActionResult> Get([FromBody] GraphQLRequest request) {
-		// TODO: this makes two places that need to do all this lookup stuff
-		var definitionProvider = this.definitionProviders.First();
+		// TODO: Pass appropriate args
+		var sheetsNode = this.definitions.GetSheets(null, null);
 
-		var schema = this.graphQL.GetSchema(definitionProvider);
+		var schema = this.graphQL.GetSchema(sheetsNode);
 
 		var json = await schema.Query(request.Query, request.Variables);
 

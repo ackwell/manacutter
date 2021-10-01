@@ -1,5 +1,4 @@
 ﻿using Manacutter.Definitions;
-using Manacutter.Services.Definitions.Middleware;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 using Git = LibGit2Sharp;
@@ -60,10 +59,43 @@ public class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 	}
 
 	// TODO: the results of this function should probably be cached in some manner
-	public DefinitionNode GetRootNode(string sheet) {
-		// TODO: ref should probably come from controller in some manner.
-		var sheetDefinition = this.GetDefinition(sheet, "HEAD");
+	public SheetsNode GetSheets(string? gitRef) {
+		// TODO: config?
+		gitRef ??= "HEAD";
 
+		// TODO: This is effectively doing a dobule lookup in git. Yuck. Merge this logic with getrootnode and suchforth once migration complete.
+		var commit = this.repository?
+			.Lookup(gitRef, Git.ObjectType.Commit)?
+			.Peel<Git.Commit>();
+
+		if (commit is null) {
+			throw new ArgumentException($"Commit reference {gitRef} could not be resolved.");
+		}
+
+		// TODO: If we go back far enough, the coinach definitions were one massive json file - do we give a shit?
+		var sheets = commit
+			["SaintCoinach/Definitions"]
+			.Target
+			.Peel<Git.Tree>()
+			.Where(tree => tree.Name.EndsWith(".json"))
+			.ToDictionary(
+				tree => tree.Name.Substring(0, tree.Name.Length - 5),
+				tree => {
+					// TODO: this needs to be cleaned up a bit.
+					var content = tree
+						.Target
+						.Peel<Git.Blob>()
+						.GetContentText();
+
+					var definition = this.GetDefinition(content);
+					return this.GetRootNode(definition);
+				}
+			);
+
+		return new SheetsNode(sheets);
+	}
+
+	private DefinitionNode GetRootNode(SheetDefinition sheetDefinition) {
 		// TODO: this is duped with group reader, possibly consolidate
 		var fields = new Dictionary<string, DefinitionNode>();
 		foreach (var column in sheetDefinition.Definitions) {
@@ -75,10 +107,7 @@ public class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 		}
 		var rootNode = new StructNode(fields);
 
-		// TODO: this should be handled by a top level method in the service structure. also, like, DI. and stuff.
-		var collapseSimple = new CollapseSimple();
-		var processed = collapseSimple.Visit(rootNode, new DefinitionWalkerContext());
-		return processed;
+		return rootNode;
 	}
 
 	private (DefinitionNode, string?) ParseDefinition(DefinitionEntry definition, uint offset) {
@@ -181,32 +210,9 @@ public class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 		return output;
 	}
 
-	private SheetDefinition GetDefinition(string sheet, string reference) {
-		var commit = repository?
-			.Lookup(reference, Git.ObjectType.Commit)?
-			.Peel<Git.Commit>();
-
-		if (commit is null) {
-			throw new ArgumentException($"Commit reference {reference} could not be resolved.");
-		}
-
+	// TODO: This can probably be completely removed as part of moving to a more StC-accurate deser step.
+	private SheetDefinition GetDefinition(string content) {
 		// TODO: This should probably be cached on some basis
-		// TODO: If we go back far enough, the coinach definitions were one massive json file - do we give a shit?
-		// TODO: Is it worth checking the name field in the json files or is it always the same? Check coinach src I guess.
-		var searchFor = $"{sheet.ToLowerInvariant()}.json";
-		var content = commit
-			["SaintCoinach/Definitions"]
-			.Target
-			.Peel<Git.Tree>()
-			.FirstOrDefault(entry => entry.Name.ToLowerInvariant() == searchFor)?
-			.Target
-			.Peel<Git.Blob>()
-			.GetContentText();
-
-		if (content is null) {
-			throw new ArgumentException($"Could not find definition for sheet {sheet} at commit {reference}.");
-		}
-
 		var sheetDefinition = JsonSerializer.Deserialize<SheetDefinition>(
 			content,
 			new JsonSerializerOptions {
@@ -216,7 +222,7 @@ public class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 
 		// TODO: What error should this even be idfk.
 		if (sheetDefinition is null) {
-			throw new Exception($"Could not deserialize sheet {sheet} at commit {reference}.");
+			throw new Exception($"Could not deserialize sheet.");
 		}
 
 		return sheetDefinition;

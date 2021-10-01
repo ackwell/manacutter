@@ -6,6 +6,12 @@ using Xunit;
 namespace Manacutter.Tests.Definitions;
 
 internal class DefinitionWalkerStub : DefinitionWalker<DefinitionWalkerContext, string> {
+	public override string VisitSheets(SheetsNode node, DefinitionWalkerContext context) {
+		var sheets = this.WalkSheets(node, context)
+			.Select(pair => $"{pair.Key}:{pair.Value}");
+		return $"{{{string.Join(',', sheets)}}}";
+	}
+
 	public override string VisitStruct(StructNode node, DefinitionWalkerContext context) {
 		var fields = this.WalkStruct(node, context)
 			.Select(pair => $"{pair.Key}:{pair.Value}");
@@ -64,19 +70,35 @@ public class DefinitionWalkerTests {
 	}
 
 	[Fact]
-	public void VisitComplex() {
-		var rootNode = new StructNode(new Dictionary<string, DefinitionNode>() {
-			{ "1", new ScalarNode() },
-			{ "2", new ArrayNode(
-				new StructNode(new Dictionary<string, DefinitionNode>() {
-					{ "3", new ScalarNode() }
-				}),
-				5
-			)}
+	public void VisitSheets() {
+		var scalarNode = new ScalarNode();
+		var structNode = new SheetsNode(new Dictionary<string, DefinitionNode>() {
+			{ "1", scalarNode },
+			{ "2", scalarNode }
 		});
 
 		Assert.Equal(
-			"{1:scalar,2:{3:scalar}[5]}",
+			"{1:scalar,2:scalar}",
+			walker.Visit(structNode, new DefinitionWalkerContext())
+		);
+	}
+
+	[Fact]
+	public void VisitComplex() {
+		var rootNode = new SheetsNode(new Dictionary<string, DefinitionNode>() {
+			{ "test", new StructNode(new Dictionary<string, DefinitionNode>() {
+				{ "1", new ScalarNode() },
+				{ "2", new ArrayNode(
+					new StructNode(new Dictionary<string, DefinitionNode>() {
+						{ "3", new ScalarNode() }
+					}),
+					5
+				) }
+			}) }
+		});
+
+		Assert.Equal(
+			"{test:{1:scalar,2:{3:scalar}[5]}}",
 			walker.Visit(rootNode, new DefinitionWalkerContext())
 		);
 	}

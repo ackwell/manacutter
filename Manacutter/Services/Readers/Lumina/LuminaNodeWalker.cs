@@ -19,6 +19,11 @@ public class LuminaNodeWalker : DefinitionWalker<DefinitionWalkerContext, object
 		return this.Visit(node, new DefinitionWalkerContext() { Offset = offset });
 	}
 
+	public override object VisitSheets(SheetsNode node, DefinitionWalkerContext context) {
+		// TODO: how do sheet definitions work in the context of reading a row? We might need to rethink how the reader interfaces function a bit, move the reader to the sheets level more akin to the gql structure
+		throw new NotImplementedException();
+	}
+
 	public override object VisitStruct(StructNode node, DefinitionWalkerContext context) {
 		return this.WalkStruct(node, context);
 	}
