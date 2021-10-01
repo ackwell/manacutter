@@ -37,6 +37,8 @@ public class LuminaSheetReader : ISheetReader {
 		this.sheet = sheet;
 	}
 
+	public bool HasSubrows => this.sheet.Header.Variant == ExcelVariant.Subrows;
+
 	public IColumnInfo? GetColumn(uint columnIndex) {
 		if (columnIndex < 0 || columnIndex >= this.sheet.ColumnCount) {
 			return null;
@@ -47,8 +49,11 @@ public class LuminaSheetReader : ISheetReader {
 		};
 	}
 
-	public IRowReader? GetRow(uint rowId) {
-		var rowParser = this.sheet.GetRowParser(rowId);
+	public IRowReader? GetRow(uint rowId, uint? subRowId) {
+		var rowParser = subRowId is null
+				? this.sheet.GetRowParser(rowId)
+				: this.sheet.GetRowParser(rowId, subRowId.Value);
+
 		if (rowParser is null) {
 			return null;
 		}

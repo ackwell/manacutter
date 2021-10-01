@@ -24,8 +24,8 @@ public class SheetsController : ControllerBase {
 		return this.Ok(this.reader.GetSheetNames());
 	}
 
-	[HttpGet("{sheetName}/{rowId}")]
-	public IActionResult GetRow(string sheetName, uint rowId) {
+	[HttpGet("{sheetName}/{rowId}/{subRowId?}")]
+	public IActionResult GetRow(string sheetName, uint rowId, uint? subRowId = null) {
 		sheetName = sheetName.ToLowerInvariant();
 
 		var sheet = this.reader.GetSheet(sheetName);
@@ -33,7 +33,17 @@ public class SheetsController : ControllerBase {
 			return this.Problem($"Requested sheet \"{sheetName}\" could not be found.", statusCode: StatusCodes.Status400BadRequest);
 		}
 
-		var row = sheet.GetRow(rowId);
+		// Make sure they're not requesting a subrow that can't exist
+		if (!sheet.HasSubrows && subRowId is not null) {
+			return this.Problem($"Sheet \"{sheetName}\" does not support sub-rows.", statusCode: StatusCodes.Status400BadRequest);
+		}
+
+		// TODO: Do we want to support an array return for subrow sheets when no subrow is specified?
+		if (sheet.HasSubrows && subRowId is null) {
+			return this.Problem($"Sheet \"{sheetName}\" requires a sub-row ID.", statusCode: StatusCodes.Status400BadRequest);
+		}
+
+		var row = sheet.GetRow(rowId, subRowId);
 		if (row is null) {
 			return this.Problem($"Sheet \"{sheetName}\" does not contain an entry for requested rowId {rowId}.", statusCode: StatusCodes.Status400BadRequest);
 		}
