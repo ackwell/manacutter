@@ -19,20 +19,28 @@ public abstract class DefinitionWalker<TContext, TReturn>
 	/// <summary>Walk the provided sheets node, visiting all sheet definitions.</summary>
 	/// <param name="node">The sheets node to walk.</param>
 	/// <param name="context">Visiting context.</param>
+	/// <param name="contextTransform">Transformation to apply to the visiting context on a per-sheet basis.</param>
 	/// <returns>Visitor results mapped to their sheet names.</returns>
 	protected IReadOnlyDictionary<string, TReturn> WalkSheets(
 		SheetsNode node,
-		TContext context
+		TContext context,
+		Func<TContext, string, DefinitionNode, TContext>? contextTransform = null
 	) {
 		return node.Sheets.ToDictionary(
 			pair => pair.Key,
-			pair => this.Visit(pair.Value, context)
+			pair => {
+				var newContext = context;
+				if (contextTransform is not null) {
+					newContext = contextTransform(newContext, pair.Key, pair.Value);
+				}
+				return this.Visit(pair.Value, newContext);
+			}
 		);
 	}
 
 	public abstract TReturn VisitStruct(StructNode node, TContext context);
 
-	// TODO: I'm not sure how happy I am about this optional param. Investigate alternatives.
+	// TODO: I'm not sure how happy I am about this optional param. Investigate alternatives. It may be worth using an entry/exit pattern, as that may also permit using mutable state, which is cheaper.
 	/// <summary>Walk the provided struct node, visiting all children.</summary>
 	/// <param name="node">The struct node to walk.</param>
 	/// <param name="context">Visiting context.</param>

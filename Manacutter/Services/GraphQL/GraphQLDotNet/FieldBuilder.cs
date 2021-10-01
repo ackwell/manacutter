@@ -9,12 +9,8 @@ using System.Text.RegularExpressions;
 namespace Manacutter.Services.GraphQL.GraphQLDotNet;
 
 public record FieldBuilderContext : DefinitionWalkerContext {
-	public ISheetReader Sheet { get; }
+	public ISheetReader? Sheet { get; init; }
 	public ImmutableList<string> Path { get; init; } = ImmutableList<string>.Empty;
-
-	public FieldBuilderContext(ISheetReader sheet) {
-		this.Sheet = sheet;
-	}
 }
 
 public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
@@ -34,8 +30,50 @@ public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
 		return name;
 	}
 
+	private readonly IReader reader;
+
+	public FieldBuilder(
+		IReader reader
+	) : base() {
+		this.reader = reader;
+	}
+
 	public override FieldType VisitSheets(SheetsNode node, FieldBuilderContext context) {
-		throw new NotImplementedException();
+		// TODO: A bunch of stuff in this method assumes it's always the root - consider?
+		var graphType = new ObjectGraphType() { Name = "Sheets" };
+
+		foreach (var (name, field) in this.WalkSheets(node, context, (context, name, _) => context with {
+			Path = ImmutableList.Create(name),
+		})) {
+			var sheet = this.reader.GetSheet(name);
+			if (sheet is null) { continue; }
+
+			if (field.ResolvedType is not null) {
+				field.ResolvedType.Name = name;
+				this.AddIDFields(field.ResolvedType);
+			}
+
+			graphType.AddField(new SingularSheetFieldType(field, sheet));
+			graphType.AddField(new PluralSheetFieldType(field, sheet));
+		}
+
+		return new FieldType() {
+			Name = "Sheets",
+			ResolvedType = graphType,
+		};
+	}
+
+	private void AddIDFields(IGraphType graphType) {
+		if (graphType is not ObjectGraphType) {
+			return;
+		}
+
+		var objectGraphType = (ObjectGraphType)graphType;
+		objectGraphType.Field("rowId", new UIntGraphType(), resolve: context => {
+			var execContext = (ExecutionContext)context.Source!;
+			return execContext.Row?.RowID;
+		});
+		// TODO: subrow
 	}
 
 	public override FieldType VisitStruct(StructNode node, FieldBuilderContext context) {
@@ -90,7 +128,7 @@ public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
 		// If the node type wasn't provided by the definition, check the reader
 		// TODO: If this needs doing in 2+ places, may be better off doing a one-off hydrate per sheet instance.
 		var columnType = node.Type == ScalarType.Unknown
-			? context.Sheet.GetColumn(context.Offset)?.Type ?? ScalarType.Unknown
+			? context.Sheet?.GetColumn(context.Offset)?.Type ?? ScalarType.Unknown
 			: node.Type;
 
 		// If it's an unknown type, we shortcut with an explicit unknown handler
