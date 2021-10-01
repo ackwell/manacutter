@@ -23,7 +23,7 @@ public class SingularSheetFieldType : FieldType {
 			};
 
 			return baseField.Resolver is null
-				? newContext
+				? newContext.Source
 				: baseField.Resolver.Resolve(newContext);
 		});
 	}

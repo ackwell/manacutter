@@ -43,6 +43,8 @@ public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
 		var graphType = new ObjectGraphType() { Name = "Sheets" };
 
 		foreach (var (name, field) in this.WalkSheets(node, context, (context, name, _) => context with {
+			// TODO: how do i dedupe this? i mean realistically, it'd be good to remove the sheet from either the exec or build context
+			Sheet = this.reader.GetSheet(name),
 			Path = ImmutableList.Create(name),
 		})) {
 			var sheet = this.reader.GetSheet(name);
@@ -60,6 +62,7 @@ public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
 		return new FieldType() {
 			Name = "Sheets",
 			ResolvedType = graphType,
+			Resolver = new FuncFieldResolver<object>(context => context.Source!)
 		};
 	}
 
