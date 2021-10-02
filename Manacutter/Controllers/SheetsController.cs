@@ -45,7 +45,8 @@ public class SheetsController : ControllerBase {
 
 		var row = sheet.GetRow(rowId, subRowId);
 		if (row is null) {
-			return this.Problem($"Sheet \"{sheetName}\" does not contain an entry for requested rowId {rowId}.", statusCode: StatusCodes.Status400BadRequest);
+			var rowFormatted = subRowId is null ? $"{rowId}" : $"{rowId}/{subRowId}";
+			return this.Problem($"Sheet \"{sheetName}\" does not contain an entry for requested row {rowFormatted}.", statusCode: StatusCodes.Status400BadRequest);
 		}
 
 		// TODO: Pass provider/version properly

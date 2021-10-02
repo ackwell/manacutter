@@ -52,7 +52,7 @@ public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
 
 			if (field.ResolvedType is not null) {
 				field.ResolvedType.Name = name;
-				this.AddIDFields(field.ResolvedType);
+				this.AddIDFields(field.ResolvedType, sheet);
 			}
 
 			graphType.AddField(new SingularSheetFieldType(field, sheet));
@@ -66,7 +66,7 @@ public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
 		};
 	}
 
-	private void AddIDFields(IGraphType graphType) {
+	private void AddIDFields(IGraphType graphType, ISheetReader sheet) {
 		if (graphType is not ObjectGraphType) {
 			return;
 		}
@@ -76,7 +76,13 @@ public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
 			var execContext = (ExecutionContext)context.Source!;
 			return execContext.Row?.RowID;
 		});
-		// TODO: subrow
+
+		if (sheet.HasSubrows) {
+			objectGraphType.Field("subRowId", new UIntGraphType(), resolve: context => {
+				var execContext = (ExecutionContext)context.Source!;
+				return execContext.Row?.SubRowID;
+			});
+		}
 	}
 
 	public override FieldType VisitStruct(StructNode node, FieldBuilderContext context) {

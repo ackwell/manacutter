@@ -13,7 +13,8 @@ public class LuminaNodeWalker : DefinitionWalker<DefinitionWalkerContext, object
 		this.rowParser = rowParser;
 	}
 
-	public uint RowID { get => this.rowParser.Row; }
+	public uint RowID => this.rowParser.Row;
+	public uint SubRowID => this.rowParser.SubRow;
 
 	public object Read(DefinitionNode node, uint offset) {
 		return this.Visit(node, new DefinitionWalkerContext() { Offset = offset });

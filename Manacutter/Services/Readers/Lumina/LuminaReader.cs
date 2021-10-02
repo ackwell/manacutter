@@ -50,9 +50,14 @@ public class LuminaSheetReader : ISheetReader {
 	}
 
 	public IRowReader? GetRow(uint rowId, uint? subRowId) {
-		var rowParser = subRowId is null
+		RowParser? rowParser = null;
+		try {
+			rowParser = subRowId is null
 				? this.sheet.GetRowParser(rowId)
 				: this.sheet.GetRowParser(rowId, subRowId.Value);
+		} catch (IndexOutOfRangeException) {
+			// noop
+		}
 
 		if (rowParser is null) {
 			return null;

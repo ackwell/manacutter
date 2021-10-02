@@ -9,17 +9,27 @@ public class SingularSheetFieldType : FieldType {
 	public SingularSheetFieldType(FieldType baseField, ISheetReader sheet) : base() {
 		this.Name = baseField.Name;
 		this.ResolvedType = baseField.ResolvedType;
+
 		this.Arguments = new QueryArguments(
 			new QueryArgument<NonNullGraphType<UIntGraphType>>() { Name = "rowId" }
-			// TODO: subrow on sheets that support them
 		);
+		if (sheet.HasSubrows) {
+			this.Arguments.Add(
+				new QueryArgument<NonNullGraphType<UIntGraphType>>() { Name = "subRowId" }
+			);
+		}
+
 		this.Resolver = new FuncFieldResolver<object>(context => {
 			var rowId = context.GetArgument<uint>("rowId");
+
+			uint? subRowId = sheet.HasSubrows
+				? context.GetArgument<uint>("subRowId")
+				: null;
 
 			var newContext = new ResolveFieldContext<ExecutionContext>(context);
 			newContext.Source = newContext.Source! with {
 				Sheet = sheet,
-				Row = sheet.GetRow(rowId),
+				Row = sheet.GetRow(rowId, subRowId),
 			};
 
 			return baseField.Resolver is null
