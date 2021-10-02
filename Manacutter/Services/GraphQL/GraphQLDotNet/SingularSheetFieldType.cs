@@ -26,10 +26,17 @@ public class SingularSheetFieldType : FieldType {
 				? context.GetArgument<uint>("subRowId")
 				: null;
 
+			var row = sheet.GetRow(rowId, subRowId);
+
+			// TODO: Do we want to call down to the base resolver with this? I don't _think_ so.
+			if (row is null) {
+				return null;
+			}
+
 			var newContext = new ResolveFieldContext<ExecutionContext>(context);
 			newContext.Source = newContext.Source! with {
 				Sheet = sheet,
-				Row = sheet.GetRow(rowId, subRowId),
+				Row = row,
 			};
 
 			return baseField.Resolver is null
