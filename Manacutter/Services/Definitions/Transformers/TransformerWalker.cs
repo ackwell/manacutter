@@ -1,10 +1,10 @@
 ﻿using Manacutter.Definitions;
 
-namespace Manacutter.Services.Definitions.Middleware;
+namespace Manacutter.Services.Definitions.Transformers;
 
 // TODO: This structure results in a seperate dfs for every middleware - can we somehow merge the middleware into a single dfs?
-abstract public class WalkerMiddleware<TContext>
-	: DefinitionWalker<TContext, DefinitionNode>, IMiddleware
+abstract public class TransformerWalker<TContext>
+	: DefinitionWalker<TContext, DefinitionNode>, ITransformer
 	where TContext : DefinitionWalkerContext, new() {
 
 	public DefinitionNode Transform(DefinitionNode node) {
@@ -29,4 +29,4 @@ abstract public class WalkerMiddleware<TContext>
 }
 
 // For people who don't need to specify their own
-abstract public class MiddlewareWalker : WalkerMiddleware<DefinitionWalkerContext> { }
+abstract public class TransformerWalker : TransformerWalker<DefinitionWalkerContext> { }

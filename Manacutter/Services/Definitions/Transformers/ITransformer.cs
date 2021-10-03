@@ -1,7 +1,7 @@
 ﻿using Manacutter.Definitions;
 
-namespace Manacutter.Services.Definitions.Middleware;
+namespace Manacutter.Services.Definitions.Transformers;
 
-public interface IMiddleware {
+public interface ITransformer {
 	public DefinitionNode Transform(DefinitionNode node);
 }

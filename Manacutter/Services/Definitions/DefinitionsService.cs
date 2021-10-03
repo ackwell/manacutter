@@ -1,5 +1,5 @@
 ﻿using Manacutter.Definitions;
-using Manacutter.Services.Definitions.Middleware;
+using Manacutter.Services.Definitions.Transformers;
 
 namespace Manacutter.Services.Definitions;
 
