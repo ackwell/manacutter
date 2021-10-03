@@ -32,7 +32,7 @@ public class DefinitionsService {
 		// TODO: DI. and stuff.
 		// TODO: the .Visit and context creation should be handled by the middleware - assuming we even stick to each middleware having it's own shit
 		var collapseSimple = new CollapseSimple();
-		var processed = collapseSimple.Visit(sheetRoot, new CollapseSimpleContext());
+		var processed = collapseSimple.Transform(sheetRoot);
 		return (SheetsNode)processed;
 	}
 }
