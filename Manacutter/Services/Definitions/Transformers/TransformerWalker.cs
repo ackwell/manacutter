@@ -7,8 +7,13 @@ abstract public class TransformerWalker<TContext>
 	: DefinitionWalker<TContext, DefinitionNode>, ITransformer
 	where TContext : DefinitionWalkerContext, new() {
 
-	public DefinitionNode Transform(DefinitionNode node) {
-		return this.Visit(node, new TContext());
+	public SheetsNode Transform(SheetsNode node) {
+		var newNode = this.Visit(node, new TContext());
+		if (newNode is not SheetsNode) {
+			// TODO: Better error
+			throw new Exception("Result of transformation walk is not a sheets node.");
+		}
+		return (SheetsNode)newNode;
 	}
 
 	public override DefinitionNode VisitSheets(SheetsNode node, TContext context) {

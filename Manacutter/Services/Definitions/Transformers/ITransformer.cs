@@ -3,5 +3,5 @@
 namespace Manacutter.Services.Definitions.Transformers;
 
 public interface ITransformer {
-	public DefinitionNode Transform(DefinitionNode node);
+	public SheetsNode Transform(SheetsNode node);
 }

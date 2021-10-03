@@ -6,11 +6,14 @@ namespace Manacutter.Services.Definitions;
 // Should this have an interface for mocking purposes &c?
 public class DefinitionsService {
 	private readonly IReadOnlyDictionary<string, IDefinitionProvider> definitions;
+	private readonly IEnumerable<ITransformer> transformers;
 
 	public DefinitionsService(
-		IEnumerable<IDefinitionProvider> definitionProviders
+		IEnumerable<IDefinitionProvider> definitionProviders,
+		IEnumerable<ITransformer> transformers
 	) {
 		this.definitions = definitionProviders.ToDictionary(provider => provider.Name);
+		this.transformers = transformers;
 	}
 
 	public SheetsNode GetSheets(
@@ -29,10 +32,6 @@ public class DefinitionsService {
 		// TODO: Some degree of caching, can apply at this level for the full set
 		// TODO: Ideas like backfilling undefined fields/sheets can become a middleware concern
 
-		// TODO: DI. and stuff.
-		// TODO: the .Visit and context creation should be handled by the middleware - assuming we even stick to each middleware having it's own shit
-		var collapseSimple = new CollapseSimple();
-		var processed = collapseSimple.Transform(sheetRoot);
-		return (SheetsNode)processed;
+		return this.transformers.Aggregate(sheetRoot, (node, transformer) => transformer.Transform(node));
 	}
 }
