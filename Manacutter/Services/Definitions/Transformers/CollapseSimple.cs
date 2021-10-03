@@ -12,24 +12,24 @@ public class CollapseSimple : TransformerWalker<CollapseSimpleContext> {
 	}
 
 	public override DefinitionNode VisitStruct(StructNode node, CollapseSimpleContext context) {
-		// TODO: How can we avoid this cast?
-		var newNode = (StructNode)base.VisitStruct(node, context with { IsSheetRoot = false});
-
-		if (context.IsSheetRoot || newNode.Fields.Count != 1) {
-			return newNode;
-		}
+		var nextContext = context with { IsSheetRoot = false };
 
 		// A struct with one field is pointless and can be collapsed
-		var child = newNode.Fields.First().Value;
-		return child with { Offset = child.Offset + node.Offset };
+		if (context.IsSheetRoot || node.Fields.Count != 1) {
+			return base.VisitStruct(node, nextContext);
+		}
+
+		var child = node.Fields.First().Value;
+		return this.Visit(child with { Offset = child.Offset + node.Offset }, nextContext);
 	}
 
 	public override DefinitionNode VisitArray(ArrayNode node, CollapseSimpleContext context) {
-		var newNode = (ArrayNode)base.VisitArray(node, context);
-
 		// An array of 1 element is equivent to its child
-		return newNode.Count > 1
-			? newNode
-			: newNode.Type with { Offset = newNode.Type.Offset + node.Offset };
+		if (node.Count > 1) {
+			return base.VisitArray(node, context);
+		}
+
+		var child = node.Type with { Offset = node.Type.Offset + node.Offset };
+		return this.Visit(child, context);
 	}
 }

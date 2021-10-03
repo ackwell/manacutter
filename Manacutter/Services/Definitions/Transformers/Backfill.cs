@@ -25,17 +25,14 @@ public class Backfill : TransformerWalker<BackfillContext> {
 	}
 
 	public override DefinitionNode VisitScalar(ScalarNode node, BackfillContext context) {
-		// TODO: Try inverting execution order on this, might let us drop the cast
-		var newNode = (ScalarNode)base.VisitScalar(node, context);
-
-		if (newNode.Type != ScalarType.Unknown || context.Sheet is null) {
-			return newNode;
+		if (node.Type != ScalarType.Unknown || context.Sheet is null) {
+			return base.VisitScalar(node, context);
 		}
 
 		var column = context.Sheet.GetColumn(context.Offset);
 
-		return newNode with {
+		return base.VisitScalar(node with {
 			Type = column?.Type ?? ScalarType.Unknown,
-		};
+		}, context);
 	}
 }
