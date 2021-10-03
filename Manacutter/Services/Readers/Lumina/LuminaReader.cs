@@ -39,6 +39,8 @@ public class LuminaSheetReader : ISheetReader {
 
 	public bool HasSubrows => this.sheet.Header.Variant == ExcelVariant.Subrows;
 
+	public uint ColumnCount => this.sheet.ColumnCount;
+
 	public IColumnInfo? GetColumn(uint columnIndex) {
 		if (columnIndex < 0 || columnIndex >= this.sheet.ColumnCount) {
 			return null;
