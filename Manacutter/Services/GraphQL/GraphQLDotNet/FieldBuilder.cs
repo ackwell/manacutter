@@ -9,7 +9,6 @@ using System.Text.RegularExpressions;
 namespace Manacutter.Services.GraphQL.GraphQLDotNet;
 
 public record FieldBuilderContext : DefinitionWalkerContext {
-	public ISheetReader? Sheet { get; init; }
 	public ImmutableList<string> Path { get; init; } = ImmutableList<string>.Empty;
 }
 
@@ -43,8 +42,6 @@ public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
 		var graphType = new ObjectGraphType() { Name = "Sheets" };
 
 		foreach (var (name, field) in this.WalkSheets(node, context, (context, name, _) => context with {
-			// TODO: how do i dedupe this? i mean realistically, it'd be good to remove the sheet from either the exec or build context
-			Sheet = this.reader.GetSheet(name),
 			Path = ImmutableList.Create(name),
 		})) {
 			var sheet = this.reader.GetSheet(name);
@@ -134,14 +131,8 @@ public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
 	public override FieldType VisitScalar(ScalarNode node, FieldBuilderContext context) {
 		var fieldName = context.Path.Last();
 
-		// If the node type wasn't provided by the definition, check the reader
-		// TODO: If this needs doing in 2+ places, may be better off doing a one-off hydrate per sheet instance.
-		var columnType = node.Type == ScalarType.Unknown
-			? context.Sheet?.GetColumn(context.Offset)?.Type ?? ScalarType.Unknown
-			: node.Type;
-
 		// If it's an unknown type, we shortcut with an explicit unknown handler
-		if (columnType == ScalarType.Unknown) {
+		if (node.Type == ScalarType.Unknown) {
 			return new FieldType() {
 				Name = fieldName,
 				ResolvedType = new StringGraphType(),
@@ -149,7 +140,7 @@ public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
 			};
 		}
 
-		ScalarGraphType graphType = columnType switch {
+		ScalarGraphType graphType = node.Type switch {
 			ScalarType.String => new StringGraphType(),
 			ScalarType.Boolean => new BooleanGraphType(),
 			ScalarType.Int8 => new SByteGraphType(),
