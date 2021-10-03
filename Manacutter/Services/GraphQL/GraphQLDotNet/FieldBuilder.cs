@@ -61,7 +61,7 @@ public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
 
 		return new FieldType() {
 			Name = "Sheets",
-			ResolvedType = graphType,
+			ResolvedType = new NonNullGraphType(graphType),
 			Resolver = new FuncFieldResolver<object>(context => context.Source!)
 		};
 	}

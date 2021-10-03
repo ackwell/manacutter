@@ -35,7 +35,6 @@ public class SingularSheetFieldType : FieldType {
 
 			var newContext = new ResolveFieldContext<ExecutionContext>(context);
 			newContext.Source = newContext.Source! with {
-				Sheet = sheet,
 				Row = row,
 			};
 

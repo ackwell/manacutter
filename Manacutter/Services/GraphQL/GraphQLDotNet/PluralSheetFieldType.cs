@@ -18,7 +18,6 @@ public class PluralSheetFieldType : FieldType {
 			for (uint index = 0; index <= 1; index++) {
 				var newContext = new ResolveFieldContext<ExecutionContext>(context);
 				var newSource = newContext.Source! with {
-					Sheet = sheet,
 					Row = sheet.GetRow(index + 10)
 				};
 				newContext.Source = newSource;

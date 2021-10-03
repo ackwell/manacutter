@@ -6,7 +6,6 @@ using System.Text.Json;
 namespace Manacutter.Services.GraphQL.GraphQLDotNet;
 
 public record ExecutionContext {
-	public ISheetReader? Sheet { get; set; }
 	public IRowReader? Row { get; set; }
 	// TODO: This is only really _nessecary_ for array nodes - is there a better way to handle it?
 	public uint Offset { get; set; } = 0;
