@@ -17,7 +17,16 @@ abstract public class TransformerWalker<TContext>
 	}
 
 	public override DefinitionNode VisitSheets(SheetsNode node, TContext context) {
-		return node with { Sheets = this.WalkSheets(node, context) };
+		return this.VisitSheets(node, context);
+	}
+
+	// TODO: I really don't like this.
+	public DefinitionNode VisitSheets(
+		SheetsNode node,
+		TContext context,
+		Func<TContext, string, DefinitionNode, TContext>? contextTransform = null
+	) {
+		return node with { Sheets = this.WalkSheets(node, context, contextTransform) };
 	}
 
 	public override DefinitionNode VisitStruct(StructNode node, TContext context) {

@@ -13,6 +13,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 			// Middleware
 			// TODO: Probably worth setting up automatic inclusion for these, maybe the providers too
 			services.AddSingleton<ITransformer, CollapseSimple>();
+			services.AddSingleton<ITransformer, Backfill>();
 
 			services.AddSingleton<DefinitionsService>();
 
