@@ -1,6 +1,6 @@
 ﻿using GraphQL.SystemTextJson;
 using GraphQL.Types;
-using Manacutter.Services.Readers;
+using Manacutter.Readers;
 using System.Text.Json;
 
 namespace Manacutter.Services.GraphQL.GraphQLDotNet;

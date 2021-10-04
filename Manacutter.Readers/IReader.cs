@@ -1,6 +1,6 @@
 ﻿using Manacutter.Common.Schema;
 
-namespace Manacutter.Services.Readers;
+namespace Manacutter.Readers;
 
 public interface IReader {
 	public IEnumerable<string> GetSheetNames();

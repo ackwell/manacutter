@@ -1,9 +1,9 @@
 ﻿using Lumina;
-using Manacutter.Services.Readers;
-using Manacutter.Services.Readers.Lumina;
+using Manacutter.Readers;
+using Manacutter.Readers.Lumina;
 
 namespace Microsoft.Extensions.DependencyInjection {
-	public static class ReaderServiceExtensions {
+	public static class ReadersExtensions {
 		public static IServiceCollection AddReaders(this IServiceCollection services) {
 			// TODO: arguably the lumina reader should do this internally
 			// TODO: Configurable data location

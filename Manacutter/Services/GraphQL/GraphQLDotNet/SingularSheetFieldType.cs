@@ -1,7 +1,7 @@
 ﻿using GraphQL;
 using GraphQL.Resolvers;
 using GraphQL.Types;
-using Manacutter.Services.Readers;
+using Manacutter.Readers;
 
 namespace Manacutter.Services.GraphQL.GraphQLDotNet;
 

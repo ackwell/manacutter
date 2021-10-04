@@ -2,12 +2,12 @@
 using Lumina.Excel;
 using Manacutter.Common.Schema;
 
-namespace Manacutter.Services.Readers.Lumina;
+namespace Manacutter.Readers.Lumina;
 
-public class LuminaNodeWalker : SchemaWalker<SchemaWalkerContext, object>, IRowReader {
+internal class LuminaNodeWalker : SchemaWalker<SchemaWalkerContext, object>, IRowReader {
 	private readonly RowParser rowParser;
 
-	public LuminaNodeWalker(
+	internal LuminaNodeWalker(
 		RowParser rowParser
 	) {
 		this.rowParser = rowParser;

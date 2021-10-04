@@ -1,5 +1,5 @@
 ﻿using Manacutter.Common.Schema;
-using Manacutter.Services.Readers;
+using Manacutter.Readers;
 
 namespace Manacutter.Services.Definitions.Transformers;
 

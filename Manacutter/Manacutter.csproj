@@ -22,6 +22,7 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\Manacutter.Common\Manacutter.Common.csproj" />
+	  <ProjectReference Include="..\Manacutter.Readers\Manacutter.Readers.csproj" />
 	</ItemGroup>
 
 </Project>

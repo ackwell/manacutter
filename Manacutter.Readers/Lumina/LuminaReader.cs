@@ -3,9 +3,9 @@ using Lumina.Data.Structs.Excel;
 using Lumina.Excel;
 using Manacutter.Common.Schema;
 
-namespace Manacutter.Services.Readers.Lumina;
+namespace Manacutter.Readers.Lumina;
 
-public class LuminaReader : IReader {
+internal class LuminaReader : IReader {
 	private readonly GameData lumina;
 
 	public LuminaReader(
@@ -28,10 +28,10 @@ public class LuminaReader : IReader {
 	}
 }
 
-public class LuminaSheetReader : ISheetReader {
+internal class LuminaSheetReader : ISheetReader {
 	private readonly ExcelSheetImpl sheet;
 
-	public LuminaSheetReader(
+	internal LuminaSheetReader(
 		ExcelSheetImpl sheet
 	) {
 		this.sheet = sheet;
@@ -69,8 +69,8 @@ public class LuminaSheetReader : ISheetReader {
 	}
 }
 
-public class LuminaColumnInfo : IColumnInfo {
-	public ExcelColumnDefinition Definition { get; init; }
+internal class LuminaColumnInfo : IColumnInfo {
+	internal ExcelColumnDefinition Definition { get; init; }
 
 	public ScalarType Type {
 		get {

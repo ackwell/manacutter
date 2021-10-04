@@ -2,7 +2,7 @@
 using GraphQL.Resolvers;
 using GraphQL.Types;
 using Manacutter.Common.Schema;
-using Manacutter.Services.Readers;
+using Manacutter.Readers;
 using System.Collections.Immutable;
 using System.Text.RegularExpressions;
 

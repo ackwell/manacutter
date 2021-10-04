@@ -1,6 +1,6 @@
 ﻿using Manacutter.Common.Schema;
+using Manacutter.Readers;
 using Manacutter.Services.Definitions;
-using Manacutter.Services.Readers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manacutter.Controllers;

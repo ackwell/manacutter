@@ -10,9 +10,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Manacutter.Common", "Manacutter.Common\Manacutter.Common.csproj", "{CBE16BCB-2240-4971-9318-920205030382}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Manacutter.Common", "Manacutter.Common\Manacutter.Common.csproj", "{CBE16BCB-2240-4971-9318-920205030382}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Manacutter.Common.Tests", "Manacutter.Common.Tests\Manacutter.Common.Tests.csproj", "{353BDCAE-F89D-4A2A-81DD-023550415774}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Manacutter.Common.Tests", "Manacutter.Common.Tests\Manacutter.Common.Tests.csproj", "{353BDCAE-F89D-4A2A-81DD-023550415774}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Manacutter.Readers", "Manacutter.Readers\Manacutter.Readers.csproj", "{593917F3-4D66-4B6E-A115-636FD88F4B8F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -32,6 +34,10 @@ Global
 		{353BDCAE-F89D-4A2A-81DD-023550415774}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{353BDCAE-F89D-4A2A-81DD-023550415774}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{353BDCAE-F89D-4A2A-81DD-023550415774}.Release|Any CPU.Build.0 = Release|Any CPU
+		{593917F3-4D66-4B6E-A115-636FD88F4B8F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{593917F3-4D66-4B6E-A115-636FD88F4B8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{593917F3-4D66-4B6E-A115-636FD88F4B8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{593917F3-4D66-4B6E-A115-636FD88F4B8F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
