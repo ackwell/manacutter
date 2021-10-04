@@ -1,4 +1,4 @@
-﻿using Manacutter.Definitions;
+﻿using Manacutter.Common.Schema;
 using Manacutter.Services.Definitions;
 using Manacutter.Services.Readers;
 using Microsoft.AspNetCore.Mvc;
@@ -53,7 +53,7 @@ public class SheetsController : ControllerBase {
 		var sheetsNode = this.definitions.GetSheets(null, null);
 		// TODO: While this is technically _safe_, where does it live? Is it a StC specific thing, a general definitions thing, or explicit to REST?
 		//       It feels pretty rest-specific, but genning a new dict every time is ehh. Then again >C#
-		var sheets = new Dictionary<string, DefinitionNode>(sheetsNode.Sheets, StringComparer.OrdinalIgnoreCase);
+		var sheets = new Dictionary<string, SchemaNode>(sheetsNode.Sheets, StringComparer.OrdinalIgnoreCase);
 		if (!sheets.TryGetValue(sheetName, out var rootNode)) {
 			return this.Problem($"Could not resolve definition for sheet \"{sheet}\".");
 		}

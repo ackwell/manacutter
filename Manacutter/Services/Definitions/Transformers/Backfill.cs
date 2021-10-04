@@ -1,9 +1,9 @@
-﻿using Manacutter.Definitions;
+﻿using Manacutter.Common.Schema;
 using Manacutter.Services.Readers;
 
 namespace Manacutter.Services.Definitions.Transformers;
 
-public record BackfillContext : DefinitionWalkerContext {
+public record BackfillContext : SchemaWalkerContext {
 	public bool IsSheetRoot { get; init; }
 	public ISheetReader? Sheet { get; init; }
 	public HashSet<uint>? DefinedColumns { get; init; }
@@ -18,7 +18,7 @@ public class Backfill : TransformerWalker<BackfillContext> {
 		this.reader = reader;
 	}
 
-	public override DefinitionNode VisitSheets(SheetsNode node, BackfillContext context) {
+	public override SchemaNode VisitSheets(SheetsNode node, BackfillContext context) {
 		return base.VisitSheets(node, context with {
 			IsSheetRoot = true,
 		}, (context, name, _) => context with {
@@ -26,7 +26,7 @@ public class Backfill : TransformerWalker<BackfillContext> {
 		});
 	}
 
-	public override DefinitionNode VisitStruct(StructNode node, BackfillContext context) {
+	public override SchemaNode VisitStruct(StructNode node, BackfillContext context) {
 		var newContext = context with { IsSheetRoot = false };
 
 		// We only want to do extra processing for the root sheet struct
@@ -47,7 +47,7 @@ public class Backfill : TransformerWalker<BackfillContext> {
 		}
 
 		// Find any column indexes not accounted for and add nodes for them
-		var fields = new Dictionary<string, DefinitionNode>(newNode.Fields);
+		var fields = new Dictionary<string, SchemaNode>(newNode.Fields);
 		for (uint index = 0; index < expectedCount; index++) {
 			if (columns.Contains(index)) { continue; }
 
@@ -60,7 +60,7 @@ public class Backfill : TransformerWalker<BackfillContext> {
 		return newNode with { Fields = fields };
 	}
 
-	public override DefinitionNode VisitArray(ArrayNode node, BackfillContext context) {
+	public override SchemaNode VisitArray(ArrayNode node, BackfillContext context) {
 		// Collect IDs consumed by the nodes in the array
 		var arrayColumns = new HashSet<uint>();
 		var newNode = (ArrayNode)base.VisitArray(node, context with { DefinedColumns = arrayColumns });
@@ -77,7 +77,7 @@ public class Backfill : TransformerWalker<BackfillContext> {
 		return newNode;
 	}
 
-	public override DefinitionNode VisitScalar(ScalarNode node, BackfillContext context) {
+	public override SchemaNode VisitScalar(ScalarNode node, BackfillContext context) {
 		// Record this column as being defined
 		context.DefinedColumns?.Add(context.Offset);
 

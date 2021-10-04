@@ -1,6 +1,6 @@
-﻿namespace Manacutter.Definitions;
+﻿namespace Manacutter.Common.Schema;
 
-public abstract record DefinitionNode {
+public abstract record SchemaNode {
 	/// <summary>Column offset within this node's parent.</summary>
 	public uint Offset { get; init; } = 0;
 
@@ -8,7 +8,7 @@ public abstract record DefinitionNode {
 	public abstract uint Size { get; }
 
 	public abstract TReturn Accept<TContext, TReturn>(
-		IDefinitionVisitor<TContext, TReturn> visitor,
+		ISchemaVisitor<TContext, TReturn> visitor,
 		TContext context
 	);
 }

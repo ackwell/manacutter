@@ -20,4 +20,8 @@
 		<PackageReference Include="Lumina" Version="3.3.0" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <ProjectReference Include="..\Manacutter.Common\Manacutter.Common.csproj" />
+	</ItemGroup>
+
 </Project>

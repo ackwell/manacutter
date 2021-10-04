@@ -1,4 +1,4 @@
-﻿using Manacutter.Definitions;
+﻿using Manacutter.Common.Schema;
 using Xunit;
 
 namespace Manacutter.Tests.Definitions;

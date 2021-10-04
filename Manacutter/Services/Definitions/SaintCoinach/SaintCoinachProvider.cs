@@ -1,4 +1,4 @@
-﻿using Manacutter.Definitions;
+﻿using Manacutter.Common.Schema;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 using Git = LibGit2Sharp;
@@ -95,9 +95,9 @@ public class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 		return new SheetsNode(sheets);
 	}
 
-	private DefinitionNode GetRootNode(SheetDefinition sheetDefinition) {
+	private SchemaNode GetRootNode(SheetDefinition sheetDefinition) {
 		// TODO: this is duped with group reader, possibly consolidate
-		var fields = new Dictionary<string, DefinitionNode>();
+		var fields = new Dictionary<string, SchemaNode>();
 		foreach (var column in sheetDefinition.Definitions) {
 			var (node, name) = this.ParseDefinition(column, 0);
 			fields.Add(
@@ -110,7 +110,7 @@ public class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 		return rootNode;
 	}
 
-	private (DefinitionNode, string?) ParseDefinition(DefinitionEntry definition, uint offset) {
+	private (SchemaNode, string?) ParseDefinition(DefinitionEntry definition, uint offset) {
 		return definition.Type switch {
 			null => this.ParseScalarDefinition(definition, offset),
 			"repeat" => this.ParseRepeatDefinition(definition, offset),
@@ -119,7 +119,7 @@ public class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 		};
 	}
 
-	private (DefinitionNode, string?) ParseScalarDefinition(DefinitionEntry definition, uint offset) {
+	private (SchemaNode, string?) ParseScalarDefinition(DefinitionEntry definition, uint offset) {
 		var node = new ScalarNode() {
 			Offset = definition.Index + offset,
 		};
@@ -127,7 +127,7 @@ public class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 		return (node, definition.Name);
 	}
 
-	private (DefinitionNode, string?) ParseRepeatDefinition(DefinitionEntry definition, uint offset) {
+	private (SchemaNode, string?) ParseRepeatDefinition(DefinitionEntry definition, uint offset) {
 		if (
 			definition.Definition is null
 			|| definition.Count is null
@@ -142,12 +142,12 @@ public class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 		return (node, name);
 	}
 
-	private (DefinitionNode, string?) ParseGroupDefinition(DefinitionEntry definition, uint offset) {
+	private (SchemaNode, string?) ParseGroupDefinition(DefinitionEntry definition, uint offset) {
 		if (definition.Members is null) {
 			throw new ArgumentException($"Invalid group definition.");
 		}
 
-		var fields = new Dictionary<string, DefinitionNode>();
+		var fields = new Dictionary<string, SchemaNode>();
 		uint size = 0;
 		foreach (var member in definition.Members) {
 			var (childNode, childName) = this.ParseDefinition(member, size);

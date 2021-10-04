@@ -1,4 +1,4 @@
-﻿namespace Manacutter.Definitions;
+﻿namespace Manacutter.Common.Schema;
 
 /// <summary>Data type stored within an excel scalar column.</summary>
 public enum ScalarType {
@@ -17,14 +17,14 @@ public enum ScalarType {
 }
 
 /// <summary>Representation of a single column with a scalar value.</summary>
-public record ScalarNode : DefinitionNode {
+public record ScalarNode : SchemaNode {
 	/// <summary>Excel type of this column.</summary>
 	public ScalarType Type { get; init; } = ScalarType.Unknown;
 
 	public override uint Size { get => 1; }
 
 	public override TReturn Accept<TContext, TReturn>(
-		IDefinitionVisitor<TContext, TReturn> visitor,
+		ISchemaVisitor<TContext, TReturn> visitor,
 		TContext context
 	) {
 		return visitor.VisitScalar(this, context);

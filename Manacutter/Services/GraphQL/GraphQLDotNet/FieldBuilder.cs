@@ -1,18 +1,18 @@
 ﻿using GraphQL;
 using GraphQL.Resolvers;
 using GraphQL.Types;
-using Manacutter.Definitions;
+using Manacutter.Common.Schema;
 using Manacutter.Services.Readers;
 using System.Collections.Immutable;
 using System.Text.RegularExpressions;
 
 namespace Manacutter.Services.GraphQL.GraphQLDotNet;
 
-public record FieldBuilderContext : DefinitionWalkerContext {
+public record FieldBuilderContext : SchemaWalkerContext {
 	public ImmutableList<string> Path { get; init; } = ImmutableList<string>.Empty;
 }
 
-public class FieldBuilder : DefinitionWalker<FieldBuilderContext, FieldType> {
+public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 	private static string SanitizeName(string name) {
 		// TODO: improve?
 		name = Regex.Replace(name, @"\W", "");

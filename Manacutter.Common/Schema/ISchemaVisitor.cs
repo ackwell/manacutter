@@ -1,6 +1,6 @@
-﻿namespace Manacutter.Definitions;
+﻿namespace Manacutter.Common.Schema;
 
-public interface IDefinitionVisitor<TContext, TReturn> {
+public interface ISchemaVisitor<TContext, TReturn> {
 	public TReturn VisitSheets(SheetsNode node, TContext context);
 	public TReturn VisitStruct(StructNode node, TContext context);
 	public TReturn VisitArray(ArrayNode node, TContext context);

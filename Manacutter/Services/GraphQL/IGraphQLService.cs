@@ -1,4 +1,4 @@
-﻿using Manacutter.Definitions;
+﻿using Manacutter.Common.Schema;
 using System.Text.Json;
 
 namespace Manacutter.Services.GraphQL;

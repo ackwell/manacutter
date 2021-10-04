@@ -1,12 +1,12 @@
-﻿namespace Manacutter.Definitions;
+﻿namespace Manacutter.Common.Schema;
 
 /// <summary> Representation of a group of named nodes.</summary>
-public record StructNode : DefinitionNode {
+public record StructNode : SchemaNode {
 	/// <summary>Mapping of names to their associated node trees.</summary>
-	public IReadOnlyDictionary<string, DefinitionNode> Fields { get; init; }
+	public IReadOnlyDictionary<string, SchemaNode> Fields { get; init; }
 
 	public StructNode(
-		IReadOnlyDictionary<string, DefinitionNode> fields
+		IReadOnlyDictionary<string, SchemaNode> fields
 	) {
 		this.Fields = fields;
 	}
@@ -19,7 +19,7 @@ public record StructNode : DefinitionNode {
 	}
 
 	public override TReturn Accept<TContext, TReturn>(
-		IDefinitionVisitor<TContext, TReturn> visitor,
+		ISchemaVisitor<TContext, TReturn> visitor,
 		TContext context
 	) {
 		return visitor.VisitStruct(this, context);

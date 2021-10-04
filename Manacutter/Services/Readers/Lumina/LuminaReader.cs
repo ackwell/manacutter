@@ -1,7 +1,7 @@
 ﻿using Lumina;
 using Lumina.Data.Structs.Excel;
 using Lumina.Excel;
-using Manacutter.Definitions;
+using Manacutter.Common.Schema;
 
 namespace Manacutter.Services.Readers.Lumina;
 

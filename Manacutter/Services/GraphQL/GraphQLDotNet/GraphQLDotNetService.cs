@@ -1,5 +1,5 @@
 ﻿using GraphQL.Types;
-using Manacutter.Definitions;
+using Manacutter.Common.Schema;
 using Manacutter.Services.Readers;
 
 namespace Manacutter.Services.GraphQL.GraphQLDotNet;

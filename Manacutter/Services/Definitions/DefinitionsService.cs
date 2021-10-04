@@ -1,4 +1,4 @@
-﻿using Manacutter.Definitions;
+﻿using Manacutter.Common.Schema;
 using Manacutter.Services.Definitions.Transformers;
 
 namespace Manacutter.Services.Definitions;

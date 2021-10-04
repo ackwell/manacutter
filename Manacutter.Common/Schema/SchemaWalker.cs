@@ -1,22 +1,22 @@
-﻿namespace Manacutter.Definitions;
+﻿namespace Manacutter.Common.Schema;
 
-/// <summary>Base visiting context maintained by the definition walker.</summary>
-public record DefinitionWalkerContext {
+/// <summary>Base visiting context maintained by the schema walker.</summary>
+public record SchemaWalkerContext {
 	/// <summary>Current column offset.</summary>
 	public uint Offset { get; init; }
 }
 
-public abstract class DefinitionWalker<TContext, TReturn>
-	: IDefinitionVisitor<TContext, TReturn>
-	where TContext : DefinitionWalkerContext {
+public abstract class SchemaWalker<TContext, TReturn>
+	: ISchemaVisitor<TContext, TReturn>
+	where TContext : SchemaWalkerContext {
 
-	public TReturn Visit(DefinitionNode node, TContext context) {
+	public TReturn Visit(SchemaNode node, TContext context) {
 		return node.Accept(this, context);
 	}
 
 	public abstract TReturn VisitSheets(SheetsNode node, TContext context);
 
-	/// <summary>Walk the provided sheets node, visiting all sheet definitions.</summary>
+	/// <summary>Walk the provided sheets node, visiting all sheet schemas.</summary>
 	/// <param name="node">The sheets node to walk.</param>
 	/// <param name="context">Visiting context.</param>
 	/// <param name="contextTransform">Transformation to apply to the visiting context on a per-sheet basis.</param>
@@ -24,7 +24,7 @@ public abstract class DefinitionWalker<TContext, TReturn>
 	protected IReadOnlyDictionary<string, TReturn> WalkSheets(
 		SheetsNode node,
 		TContext context,
-		Func<TContext, string, DefinitionNode, TContext>? contextTransform = null
+		Func<TContext, string, SchemaNode, TContext>? contextTransform = null
 	) {
 		return node.Sheets.ToDictionary(
 			pair => pair.Key,
@@ -49,7 +49,7 @@ public abstract class DefinitionWalker<TContext, TReturn>
 	protected IReadOnlyDictionary<string, TReturn> WalkStruct(
 		StructNode node,
 		TContext context,
-		Func<TContext, string, DefinitionNode, TContext>? contextTransform = null
+		Func<TContext, string, SchemaNode, TContext>? contextTransform = null
 	) {
 		return node.Fields.ToDictionary(
 			pair => pair.Key,

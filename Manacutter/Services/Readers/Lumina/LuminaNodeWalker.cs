@@ -1,10 +1,10 @@
 ﻿using Lumina.Data.Structs.Excel;
 using Lumina.Excel;
-using Manacutter.Definitions;
+using Manacutter.Common.Schema;
 
 namespace Manacutter.Services.Readers.Lumina;
 
-public class LuminaNodeWalker : DefinitionWalker<DefinitionWalkerContext, object>, IRowReader {
+public class LuminaNodeWalker : SchemaWalker<SchemaWalkerContext, object>, IRowReader {
 	private readonly RowParser rowParser;
 
 	public LuminaNodeWalker(
@@ -16,20 +16,20 @@ public class LuminaNodeWalker : DefinitionWalker<DefinitionWalkerContext, object
 	public uint RowID => this.rowParser.Row;
 	public uint SubRowID => this.rowParser.SubRow;
 
-	public object Read(DefinitionNode node, uint offset) {
-		return this.Visit(node, new DefinitionWalkerContext() { Offset = offset });
+	public object Read(SchemaNode node, uint offset) {
+		return this.Visit(node, new SchemaWalkerContext() { Offset = offset });
 	}
 
-	public override object VisitSheets(SheetsNode node, DefinitionWalkerContext context) {
+	public override object VisitSheets(SheetsNode node, SchemaWalkerContext context) {
 		// TODO: how do sheet definitions work in the context of reading a row? We might need to rethink how the reader interfaces function a bit, move the reader to the sheets level more akin to the gql structure
 		throw new NotImplementedException();
 	}
 
-	public override object VisitStruct(StructNode node, DefinitionWalkerContext context) {
+	public override object VisitStruct(StructNode node, SchemaWalkerContext context) {
 		return this.WalkStruct(node, context);
 	}
 
-	public override object VisitArray(ArrayNode node, DefinitionWalkerContext context) {
+	public override object VisitArray(ArrayNode node, SchemaWalkerContext context) {
 		var baseOffset = context.Offset;
 		var elementWidth = node.Type.Size;
 
@@ -42,7 +42,7 @@ public class LuminaNodeWalker : DefinitionWalker<DefinitionWalkerContext, object
 		return value;
 	}
 
-	public override object VisitScalar(ScalarNode node, DefinitionWalkerContext context) {
+	public override object VisitScalar(ScalarNode node, SchemaWalkerContext context) {
 		var index = context.Offset;
 		var value = this.rowParser.ReadColumnRaw((int)index);
 		var column = this.rowParser.Sheet.Columns[index];

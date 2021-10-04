@@ -1,14 +1,14 @@
-﻿namespace Manacutter.Definitions;
+﻿namespace Manacutter.Common.Schema;
 
 /// <summary>Representation of an array of one or more columns with repeated semantics.</summary>
-public record ArrayNode : DefinitionNode {
+public record ArrayNode : SchemaNode {
 	/// <summary>Node representing the type of column(s) in the array.</summary>
-	public DefinitionNode Type { get; init; }
+	public SchemaNode Type { get; init; }
 	/// <summary>Number of elements in the array.</summary>
 	public uint Count { get; init; }
 
 	public ArrayNode(
-		DefinitionNode type,
+		SchemaNode type,
 		uint count
 	) {
 		this.Type = type;
@@ -20,7 +20,7 @@ public record ArrayNode : DefinitionNode {
 	}
 
 	public override TReturn Accept<TContext, TReturn>(
-		IDefinitionVisitor<TContext, TReturn> visitor,
+		ISchemaVisitor<TContext, TReturn> visitor,
 		TContext context
 	) {
 		return visitor.VisitArray(this, context);

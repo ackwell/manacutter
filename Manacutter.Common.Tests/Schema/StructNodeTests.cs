@@ -1,4 +1,4 @@
-﻿using Manacutter.Definitions;
+﻿using Manacutter.Common.Schema;
 using System.Linq;
 using Xunit;
 
@@ -13,7 +13,7 @@ public class StructNodeTests {
 			.Range(0, (int)count)
 			.ToDictionary(
 				value => value.ToString(),
-				_ => new ScalarNode() as DefinitionNode
+				_ => new ScalarNode() as SchemaNode
 			);
 
 		var structNode = new StructNode(fields);
