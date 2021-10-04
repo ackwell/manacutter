@@ -1,6 +1,7 @@
-﻿using Manacutter.Services.Definitions;
-using Manacutter.Services.Definitions.SaintCoinach;
-using Manacutter.Services.Definitions.Transformers;
+﻿using Manacutter.Definitions;
+using Manacutter.Definitions.SaintCoinach;
+using Manacutter.Definitions.Transformers;
+using Microsoft.Extensions.Configuration;
 
 namespace Microsoft.Extensions.DependencyInjection {
 	public static class DefinitionServiceExtensions {
@@ -15,7 +16,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 			services.AddSingleton<ITransformer, CollapseSimple>();
 			services.AddSingleton<ITransformer, Backfill>();
 
-			services.AddSingleton<DefinitionsService>();
+			services.AddSingleton<IDefinitions, DefinitionsService>();
 
 			return services;
 		}

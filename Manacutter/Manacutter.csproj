@@ -16,12 +16,11 @@
 	<ItemGroup>
 		<PackageReference Include="GraphQL" Version="4.6.0" />
 		<PackageReference Include="GraphQL.SystemTextJson" Version="4.6.0" />
-		<PackageReference Include="LibGit2Sharp" Version="0.26.2" />
-		<PackageReference Include="Lumina" Version="3.3.0" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <ProjectReference Include="..\Manacutter.Common\Manacutter.Common.csproj" />
+	  <ProjectReference Include="..\Manacutter.Definitions\Manacutter.Definitions.csproj" />
 	  <ProjectReference Include="..\Manacutter.Readers\Manacutter.Readers.csproj" />
 	</ItemGroup>
 

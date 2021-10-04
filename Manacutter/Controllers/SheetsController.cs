@@ -1,6 +1,6 @@
 ﻿using Manacutter.Common.Schema;
+using Manacutter.Definitions;
 using Manacutter.Readers;
-using Manacutter.Services.Definitions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manacutter.Controllers;
@@ -9,11 +9,11 @@ namespace Manacutter.Controllers;
 [ApiController]
 public class SheetsController : ControllerBase {
 	private readonly IReader reader;
-	private readonly DefinitionsService definitions;
+	private readonly IDefinitions definitions;
 
 	public SheetsController(
 		IReader reader,
-		DefinitionsService definitions
+		IDefinitions definitions
 	) {
 		this.reader = reader;
 		this.definitions = definitions;

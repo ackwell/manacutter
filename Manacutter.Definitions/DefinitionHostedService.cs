@@ -1,6 +1,9 @@
-﻿namespace Manacutter.Services.Definitions;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
-public class DefinitionHostedService : IHostedService {
+namespace Manacutter.Definitions;
+
+internal class DefinitionHostedService : IHostedService {
 	private readonly IServiceProvider serviceProvider;
 	public DefinitionHostedService(IServiceProvider serviceProvider) {
 		this.serviceProvider = serviceProvider;

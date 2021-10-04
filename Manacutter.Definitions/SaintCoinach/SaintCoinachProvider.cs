@@ -1,11 +1,13 @@
 ﻿using Manacutter.Common.Schema;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 using Git = LibGit2Sharp;
 
-namespace Manacutter.Services.Definitions.SaintCoinach;
+namespace Manacutter.Definitions.SaintCoinach;
 
-public class SaintCoinachOptions {
+internal class SaintCoinachOptions {
 	public const string Name = "SaintCoinach";
 
 	public string Repository { get; set; } = "";
@@ -13,7 +15,7 @@ public class SaintCoinachOptions {
 }
 
 // TODO: this class has a weird mix of responsibilities between git logic and node building, should be split up.
-public class SaintCoinachProvider : IDefinitionProvider, IDisposable {
+internal class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 	public string Name => "saint-coinach";
 
 	private Git.Repository? repository;

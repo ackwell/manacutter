@@ -1,4 +1,4 @@
-﻿using Manacutter.Services.Definitions;
+﻿using Manacutter.Definitions;
 using Manacutter.Services.GraphQL;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
@@ -10,11 +10,11 @@ namespace Manacutter.Controllers;
 [Route("[controller]")]
 [ApiController]
 public class GraphQLController : ControllerBase {
-	private readonly DefinitionsService definitions;
+	private readonly IDefinitions definitions;
 	private readonly IGraphQLService graphQL;
 
 	public GraphQLController(
-		DefinitionsService definitions,
+		IDefinitions definitions,
 		IGraphQLService graphQL
 	) {
 		this.definitions = definitions;

@@ -1,10 +1,10 @@
 ﻿using Manacutter.Common.Schema;
-using Manacutter.Services.Definitions.Transformers;
+using Manacutter.Definitions.Transformers;
 
-namespace Manacutter.Services.Definitions;
+namespace Manacutter.Definitions;
 
 // Should this have an interface for mocking purposes &c?
-public class DefinitionsService {
+internal class DefinitionsService : IDefinitions {
 	private readonly IReadOnlyDictionary<string, IDefinitionProvider> definitions;
 	private readonly IEnumerable<ITransformer> transformers;
 

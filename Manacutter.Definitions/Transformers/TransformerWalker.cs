@@ -1,9 +1,9 @@
 ﻿using Manacutter.Common.Schema;
 
-namespace Manacutter.Services.Definitions.Transformers;
+namespace Manacutter.Definitions.Transformers;
 
 // TODO: This structure results in a seperate dfs for every middleware - can we somehow merge the middleware into a single dfs?
-abstract public class TransformerWalker<TContext>
+abstract internal class TransformerWalker<TContext>
 	: SchemaWalker<TContext, SchemaNode>, ITransformer
 	where TContext : SchemaWalkerContext, new() {
 
@@ -43,4 +43,4 @@ abstract public class TransformerWalker<TContext>
 }
 
 // For people who don't need to specify their own
-abstract public class TransformerWalker : TransformerWalker<SchemaWalkerContext> { }
+abstract internal class TransformerWalker : TransformerWalker<SchemaWalkerContext> { }

@@ -1,8 +1,8 @@
 ﻿using Manacutter.Common.Schema;
 
-namespace Manacutter.Services.Definitions;
+namespace Manacutter.Definitions;
 
-public interface IDefinitionProvider {
+internal interface IDefinitionProvider {
 	public string Name { get; }
 
 	public Task Initialize();

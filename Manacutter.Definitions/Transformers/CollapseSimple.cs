@@ -1,12 +1,12 @@
 ﻿using Manacutter.Common.Schema;
 
-namespace Manacutter.Services.Definitions.Transformers;
+namespace Manacutter.Definitions.Transformers;
 
-public record CollapseSimpleContext : SchemaWalkerContext {
+internal record CollapseSimpleContext : SchemaWalkerContext {
 	public bool IsSheetRoot { get; init; }
 }
 
-public class CollapseSimple : TransformerWalker<CollapseSimpleContext> {
+internal class CollapseSimple : TransformerWalker<CollapseSimpleContext> {
 	public override SchemaNode VisitSheets(SheetsNode node, CollapseSimpleContext context) {
 		return base.VisitSheets(node, context with { IsSheetRoot = true });
 	}

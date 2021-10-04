@@ -1,15 +1,15 @@
 ﻿using Manacutter.Common.Schema;
 using Manacutter.Readers;
 
-namespace Manacutter.Services.Definitions.Transformers;
+namespace Manacutter.Definitions.Transformers;
 
-public record BackfillContext : SchemaWalkerContext {
+internal record BackfillContext : SchemaWalkerContext {
 	public bool IsSheetRoot { get; init; }
 	public ISheetReader? Sheet { get; init; }
 	public HashSet<uint>? DefinedColumns { get; init; }
 }
 
-public class Backfill : TransformerWalker<BackfillContext> {
+internal class Backfill : TransformerWalker<BackfillContext> {
 	private readonly IReader reader;
 
 	public Backfill(
