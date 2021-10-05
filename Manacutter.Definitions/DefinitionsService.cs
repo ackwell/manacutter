@@ -1,5 +1,6 @@
 ﻿using Manacutter.Common.Schema;
 using Manacutter.Definitions.Transformers;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Manacutter.Definitions;
 
@@ -7,6 +8,8 @@ namespace Manacutter.Definitions;
 internal class DefinitionsService : IDefinitions {
 	private readonly IReadOnlyDictionary<string, IDefinitionProvider> definitions;
 	private readonly IEnumerable<ITransformer> transformers;
+	private readonly MemoryCache cache;
+	private readonly TimeSpan cacheTTL;
 
 	public DefinitionsService(
 		IEnumerable<IDefinitionProvider> definitionProviders,
@@ -14,6 +17,10 @@ internal class DefinitionsService : IDefinitions {
 	) {
 		this.definitions = definitionProviders.ToDictionary(provider => provider.Name);
 		this.transformers = transformers;
+
+		this.cache = new MemoryCache(new MemoryCacheOptions() { });
+		// TODO: config. possible live updating? Currently 5m.
+		this.cacheTTL = TimeSpan.Parse("00:05");
 	}
 
 	public SheetsNode GetSheets(
@@ -28,11 +35,18 @@ internal class DefinitionsService : IDefinitions {
 		}
 
 		var canonicalVersion = provider.GetCanonicalVersion(version);
-		var sheetRoot = provider.GetSheets(canonicalVersion);
 
-		// TODO: Some degree of caching, can apply at this level for the full set
-		// TODO: Ideas like backfilling undefined fields/sheets can become a middleware concern
+		var pendingSheetRoot = this.cache.GetOrCreate((providerName, canonicalVersion), entry => {
+			entry.SlidingExpiration = this.cacheTTL;
+			return Task.Run(() => {
+				var sheetRoot = provider.GetSheets(canonicalVersion);
+				return this.transformers.Aggregate(
+					sheetRoot,
+					(node, transformer) => transformer.Transform(node)
+				);
+			});
+		});
 
-		return this.transformers.Aggregate(sheetRoot, (node, transformer) => transformer.Transform(node));
+		return pendingSheetRoot.Result;
 	}
 }
