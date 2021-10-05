@@ -60,12 +60,31 @@ internal class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 		this.repository?.Dispose();
 	}
 
-	// TODO: the results of this function should probably be cached in some manner
-	public SheetsNode GetSheets(string? gitRef) {
-		// TODO: config?
-		gitRef ??= "HEAD";
+	public string GetCanonicalVersion(string? version) {
+		// TODO: I should really consolidate null checking of the repo. Also like, a health init check or something.
+		if (this.repository is null) {
+			throw new ArgumentNullException("Repository not yet initialised");
+		}
 
-		// TODO: This is effectively doing a dobule lookup in git. Yuck. Merge this logic with getrootnode and suchforth once migration complete.
+		// If no version is specified, resolve to the tip of HEAD's SHA
+		if (version is null) {
+			return this.repository.Head.Tip.Sha;
+		}
+
+		// Otherwise, resolve the ref to a git commit and grab it's SHA
+		var commit = this.repository
+			.Lookup(version, Git.ObjectType.Commit)?
+			.Peel<Git.Commit>();
+
+		if (commit is null) {
+			throw new ArgumentException($"Commit reference {version} could not be resolved.");
+		}
+
+		return commit.Sha;
+	}
+
+	// TODO: the results of this function should probably be cached in some manner
+	public SheetsNode GetSheets(string gitRef) {
 		var commit = this.repository?
 			.Lookup(gitRef, Git.ObjectType.Commit)?
 			.Peel<Git.Commit>();

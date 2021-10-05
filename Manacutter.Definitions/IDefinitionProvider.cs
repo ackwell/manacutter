@@ -7,5 +7,7 @@ internal interface IDefinitionProvider {
 
 	public Task Initialize();
 
-	public SheetsNode GetSheets(string? version);
+	public string GetCanonicalVersion(string? version);
+
+	public SheetsNode GetSheets(string version);
 }

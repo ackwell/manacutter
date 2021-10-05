@@ -27,7 +27,8 @@ internal class DefinitionsService : IDefinitions {
 			throw new ArgumentException($"Requested provider \"{providerName}\" could not be found.");
 		}
 
-		var sheetRoot = provider.GetSheets(version);
+		var canonicalVersion = provider.GetCanonicalVersion(version);
+		var sheetRoot = provider.GetSheets(canonicalVersion);
 
 		// TODO: Some degree of caching, can apply at this level for the full set
 		// TODO: Ideas like backfilling undefined fields/sheets can become a middleware concern
