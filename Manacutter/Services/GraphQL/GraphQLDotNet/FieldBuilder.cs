@@ -5,6 +5,7 @@ using Manacutter.Common.Schema;
 using Manacutter.Readers;
 using System.Collections.Immutable;
 using System.Text.RegularExpressions;
+using GraphQL.Relay.Types;
 
 namespace Manacutter.Services.GraphQL.GraphQLDotNet;
 
@@ -13,6 +14,7 @@ public record FieldBuilderContext : SchemaWalkerContext {
 }
 
 public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
+	private static char IdSeparator = '/';
 	private static string SanitizeName(string name) {
 		// TODO: improve?
 		name = Regex.Replace(name, @"\W", "");
@@ -49,7 +51,7 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 
 			if (field.ResolvedType is not null) {
 				field.ResolvedType.Name = name;
-				this.AddIDFields(field.ResolvedType, sheet);
+				field.ResolvedType = this.AddIDFields(field.ResolvedType, sheet);
 			}
 
 			graphType.AddField(new SingularSheetFieldType(field, sheet));
@@ -63,23 +65,72 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 		};
 	}
 
-	private void AddIDFields(IGraphType graphType, ISheetReader sheet) {
+	// TODO: Rename
+	private IGraphType AddIDFields(IGraphType graphType, ISheetReader sheet) {
 		if (graphType is not ObjectGraphType) {
-			return;
+			return graphType;
 		}
 
 		var objectGraphType = (ObjectGraphType)graphType;
-		objectGraphType.Field("rowId", new UIntGraphType(), resolve: context => {
-			var execContext = (ExecutionContext)context.Source!;
-			return execContext.Row?.RowID;
+
+		// TODO: This might be better off as a wrapper class akin to SingularSheetFieldType &c.
+		// Build the core node graph type we'll use for the sheet.
+		var nodeGraphType = new DefaultNodeGraphType<ExecutionContext, object?>(rowIdString => {
+			// Resolve the ID string into the row ID, and subrow if this sheet supports them.
+			uint? subRowId = null;
+			if (sheet.HasSubrows) {
+				// TODO: extract seperator into static
+				var split = rowIdString.Split(IdSeparator);
+				rowIdString = split[0];
+				subRowId = uint.Parse(split[1]);
+			}
+			var rowId = uint.Parse(rowIdString);
+
+			// Build the execution context for the node.
+			var row = sheet.GetRow(rowId, subRowId);
+			if (row is null) { return null; }
+			return new ExecutionContext() { Row = row, GraphNodeName = graphType.Name };
+		}) {
+			Name = graphType.Name,
+			IsTypeOf = input => {
+				var execContext = (ExecutionContext)input;
+				// The graph node name is only used when resolving node types - if it's not set, we arrived here through other means that we can assume are correct.
+				if (execContext.GraphNodeName is null) { return true; }
+				return graphType.Name == execContext.GraphNodeName;
+			},
+		};
+
+		// Add the relay-compliant ID field. We're doing this manually rather than using .Id due to the latter's API not permitting the degree of customisation we need here.
+		nodeGraphType.Field<NonNullGraphType<IdGraphType>>("id", resolve: context => {
+			var row = context.Source!.Row;
+			var id = $"{row?.RowID ?? 0}";
+			if (sheet.HasSubrows) {
+				id = $"{id}{IdSeparator}{row?.SubRowID ?? 0}";
+			}
+			return Node.ToGlobalId(context.ParentType.Name, id);
+		});
+
+		// Bring all the graph type's fields across to the new one.
+		foreach (var field in objectGraphType.Fields) {
+			// If there's an ID field, it'll conflict with the relay ID - prefix it with the type's name.
+			if (field.Name.ToLowerInvariant() == "id") {
+				field.Name = $"{graphType.Name}Id";
+			}
+			nodeGraphType.AddField(field);
+		}
+
+		// Add extra fields for the row's ID(s).
+		nodeGraphType.Field<NonNullGraphType<UIntGraphType>>("rowId", resolve: context => {
+			return context.Source?.Row?.RowID;
 		});
 
 		if (sheet.HasSubrows) {
-			objectGraphType.Field("subRowId", new UIntGraphType(), resolve: context => {
-				var execContext = (ExecutionContext)context.Source!;
-				return execContext.Row?.SubRowID;
+			nodeGraphType.Field<NonNullGraphType<UIntGraphType>>("subRowId", resolve: context => {
+				return context.Source?.Row?.SubRowID;
 			});
 		}
+
+		return nodeGraphType;
 	}
 
 	public override FieldType VisitStruct(StructNode node, FieldBuilderContext context) {

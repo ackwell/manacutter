@@ -1,4 +1,4 @@
-﻿using GraphQL.Types;
+﻿using GraphQL.Relay.Types;
 using Manacutter.Common.Schema;
 using Manacutter.Readers;
 
@@ -15,7 +15,7 @@ public class GraphQLDotNetService : IGraphQLService {
 
 	// TODO: Cache schemas or something
 	public IGraphQLSchema GetSchema(SheetsNode sheetsNode) {
-		var graphType = new ObjectGraphType() { Name = "Query" };
+		var graphType = new QueryGraphType();
 
 		var builder = new FieldBuilder(this.reader);
 		var sheetsField = builder.Visit(sheetsNode, new FieldBuilderContext());

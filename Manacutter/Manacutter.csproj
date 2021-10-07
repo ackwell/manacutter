@@ -15,6 +15,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="GraphQL" Version="4.6.0" />
+		<PackageReference Include="GraphQL.Relay" Version="0.6.2" />
 		<PackageReference Include="GraphQL.SystemTextJson" Version="4.6.0" />
 	</ItemGroup>
 

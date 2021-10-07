@@ -6,6 +6,9 @@ using System.Text.Json;
 namespace Manacutter.Services.GraphQL.GraphQLDotNet;
 
 public record ExecutionContext {
+	// TODO: This only exists for node IsTypeOf checking. Can we avoid it?
+	public string? GraphNodeName { get; init; }
+
 	public IRowReader? Row { get; set; }
 	// TODO: This is only really _nessecary_ for array nodes - is there a better way to handle it?
 	public uint Offset { get; set; } = 0;
@@ -28,6 +31,10 @@ public class GraphQLDotNetSchema : IGraphQLSchema {
 			options.Query = query;
 			options.Inputs = variables.ToInputs();
 			options.Root = new ExecutionContext();
+
+#if DEBUG
+			options.ThrowOnUnhandledException = true;
+#endif
 		});
 	}
 }
