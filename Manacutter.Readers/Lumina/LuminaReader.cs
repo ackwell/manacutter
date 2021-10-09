@@ -51,6 +51,8 @@ internal class LuminaSheetReader : ISheetReader {
 		};
 	}
 
+	// TODO: Tempted to say that this should check hassubrows instead, and always take a subRowId
+	// Would potentially make top-level logic easier, and let a lot of consumers ignore subrows as a concept
 	public IRowReader? GetRow(uint rowId, uint? subRowId) {
 		RowParser? rowParser = null;
 		try {
@@ -66,6 +68,42 @@ internal class LuminaSheetReader : ISheetReader {
 		}
 
 		return new LuminaNodeWalker(rowParser);
+	}
+
+	public IEnumerable<IRowReader> EnumerateRows(uint? startRowId, uint? startSubRowId) {
+		foreach (var page in this.sheet.DataPages) {
+			// If this page doesn't contain the starting row, skip it entirely.
+			if (startRowId is not null && !page.RowData.ContainsKey(startRowId.Value)) {
+				continue;
+			}
+
+			// Local row parser for subrow handling.
+			var parser = new RowParser(this.sheet, page.File);
+
+			foreach (var rowPtr in page.RowData.Values) {
+				// If we're looking for a starting row, skip until we find it.
+				if (startRowId is not null) {
+					if (rowPtr.RowId != startRowId.Value) {
+						continue;
+					}
+
+					startRowId = null;
+				}
+
+				// If this sheet doesn't have subrows, just yield the row and skip further handling.
+				if (!this.HasSubrows) {
+					yield return this.GetRow(rowPtr.RowId, null)!;
+					continue;
+				}
+
+				// Yield through all the subrows of this row.
+				parser.SeekToRow(rowPtr.RowId);
+				for (uint index = startSubRowId ?? 0; index < parser.RowCount; index++) {
+					yield return this.GetRow(rowPtr.RowId, index)!;
+				}
+				startSubRowId = null;
+			}
+		}
 	}
 }
 

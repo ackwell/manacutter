@@ -11,10 +11,12 @@ public interface ISheetReader {
 	public bool HasSubrows { get; }
 
 	public uint ColumnCount { get; }
+
 	public IColumnInfo? GetColumn(uint columnIndex);
 
 	// TODO: Definitions throws, this is nullable. Need to solidy on a solution in one direction.
 	public IRowReader? GetRow(uint rowId, uint? subRowId = null);
+	public IEnumerable<IRowReader> EnumerateRows(uint? startRowId, uint? startSubRowId);
 }
 
 public interface IColumnInfo {
