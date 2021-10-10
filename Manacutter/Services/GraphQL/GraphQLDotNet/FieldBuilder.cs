@@ -6,6 +6,7 @@ using Manacutter.Readers;
 using System.Collections.Immutable;
 using System.Text.RegularExpressions;
 using GraphQL.Relay.Types;
+using Humanizer;
 
 namespace Manacutter.Services.GraphQL.GraphQLDotNet;
 
@@ -16,17 +17,20 @@ public record FieldBuilderContext : SchemaWalkerContext {
 public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 	private static readonly char IdSeparator = '/';
 	private static string SanitizeName(string name) {
-		// TODO: improve?
+		// TODO: Some of this is very saint-specific, isolate?
+		// Replace common symbols, then remove any remaining non-word symbols.
+		name = name.Replace("%", "Percent");
 		name = Regex.Replace(name, @"\W", "");
 
-		// Stolen from Adam because, and I quote, "kill me".
-		// TODO: Better way?
-		if (char.IsDigit(name[0])) {
-			var index = name[0] - '0';
-			// const?
-			var lookup = new string[] { "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine" };
-			name = $"{lookup[index]}{name[1..]}";
+		// If there's a leading number, translate it to an english word representation.
+		var leadingNumbers = name.TakeWhile(c => char.IsDigit(c)).ToArray();
+		if (leadingNumbers.Length > 0) {
+			var asWords = int.Parse(new string(leadingNumbers)).ToWords();
+			name = $"{asWords}{name[leadingNumbers.Length..]}";
 		}
+
+		// We're splitting -> lowering before swapping to camel so that strings such as "AOZArrangement" become "aozArrangement" rather than "aOZArrangement".
+		name = name.Humanize().ToLowerInvariant().Camelize();
 
 		return name;
 	}
@@ -44,13 +48,12 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 		var graphType = new ObjectGraphType() { Name = "Sheets" };
 
 		foreach (var (name, field) in this.WalkSheets(node, context, (context, name, _) => context with {
-			Path = ImmutableList.Create(name),
+			Path = ImmutableList.Create(SanitizeName(name)),
 		})) {
 			var sheet = this.reader.GetSheet(name);
 			if (sheet is null) { continue; }
 
 			if (field.ResolvedType is not null) {
-				field.ResolvedType.Name = name;
 				field.ResolvedType = this.AddIDFields(field.ResolvedType, sheet);
 			}
 
@@ -135,7 +138,7 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 
 	public override FieldType VisitStruct(StructNode node, FieldBuilderContext context) {
 		var type = new ObjectGraphType() {
-			Name = string.Join('_', context.Path)
+			Name = string.Join('_', context.Path.Select(part => part.Pascalize())),
 		};
 
 		foreach (var pair in this.WalkStruct(node, context, (context, name, _) => context with {

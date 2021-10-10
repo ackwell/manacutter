@@ -2,6 +2,7 @@
 using GraphQL.Resolvers;
 using GraphQL.Types;
 using GraphQL.Types.Relay;
+using Humanizer;
 using Manacutter.Readers;
 using System.Text;
 
@@ -22,10 +23,9 @@ public class PluralSheetFieldType : FieldType {
 			throw new ArgumentNullException(nameof(baseField.ResolvedType));
 		}
 
-		// TODO: actually pluralise this
-		this.Name = $"{baseField.Name}_plural";
+		this.Name = $"{baseField.Name.Pluralize()}Connection";
 
-		this.ResolvedType = new SheetConnectionGraphType(baseField.Name, baseField.ResolvedType);
+		this.ResolvedType = new SheetConnectionGraphType(baseField.ResolvedType);
 		this.Arguments = new QueryArguments(
 			new QueryArgument<NonNullGraphType<IntGraphType>>() { Name = "first" },
 			new QueryArgument<StringGraphType>() { Name = "after" }
@@ -79,10 +79,10 @@ public class PluralSheetFieldType : FieldType {
 }
 
 class SheetConnectionGraphType : ObjectGraphType {
-	public SheetConnectionGraphType(string name, IGraphType sheetType) {
-		this.Name = $"{name}Connection";
+	public SheetConnectionGraphType(IGraphType sheetType) {
+		this.Name = $"{sheetType.Name}Connection";
 
-		this.Field("edges", new ListGraphType(new SheetEdgeGraphType(name, sheetType)), resolve: context => {
+		this.Field("edges", new ListGraphType(new SheetEdgeGraphType(sheetType)), resolve: context => {
 			return ((ConnectionContext)context.Source!).ExecutionContexts;
 		});
 
@@ -102,8 +102,8 @@ class SheetConnectionGraphType : ObjectGraphType {
 }
 
 class SheetEdgeGraphType : ObjectGraphType {
-	public SheetEdgeGraphType(string name, IGraphType sheetType) {
-		this.Name = $"{name}Edge";
+	public SheetEdgeGraphType(IGraphType sheetType) {
+		this.Name = $"{sheetType.Name}Edge";
 
 		this.Field("node", sheetType, resolve: context => context.Source);
 
