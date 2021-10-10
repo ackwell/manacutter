@@ -28,7 +28,6 @@ public class SingularSheetFieldType : FieldType {
 
 			var row = sheet.GetRow(rowId, subRowId);
 
-			// TODO: Do we want to call down to the base resolver with this? I don't _think_ so.
 			if (row is null) {
 				return null;
 			}

@@ -14,7 +14,7 @@ public record FieldBuilderContext : SchemaWalkerContext {
 }
 
 public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
-	private static char IdSeparator = '/';
+	private static readonly char IdSeparator = '/';
 	private static string SanitizeName(string name) {
 		// TODO: improve?
 		name = Regex.Replace(name, @"\W", "");
@@ -25,7 +25,7 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 			var index = name[0] - '0';
 			// const?
 			var lookup = new string[] { "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine" };
-			name = $"{lookup[index]}{name.Substring(1)}";
+			name = $"{lookup[index]}{name[1..]}";
 		}
 
 		return name;

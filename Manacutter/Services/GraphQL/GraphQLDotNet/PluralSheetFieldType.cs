@@ -18,6 +18,10 @@ record ConnectionContext {
 
 public class PluralSheetFieldType : FieldType {
 	public PluralSheetFieldType(FieldType baseField, ISheetReader sheet) : base() {
+		if (baseField.ResolvedType is null) {
+			throw new ArgumentNullException(nameof(baseField.ResolvedType));
+		}
+
 		// TODO: actually pluralise this
 		this.Name = $"{baseField.Name}_plural";
 
@@ -111,7 +115,7 @@ class SheetEdgeGraphType : ObjectGraphType {
 }
 
 static class CursorUtils {
-	static char separator = '/';
+	static readonly char separator = '/';
 
 	public static string? RowToCursor(IRowReader? row) {
 		if (row is null) { return null; }
