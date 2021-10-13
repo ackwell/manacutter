@@ -22,6 +22,10 @@ internal class DefinitionWalkerStub : SchemaWalker<SchemaWalkerContext, string> 
 		return $"{this.WalkArray(node, context)}[{node.Count}]";
 	}
 
+	public override string VisitReference(ReferenceNode node, SchemaWalkerContext context) {
+		return $"ref|{string.Join(',', node.Targets.Select(target => target.Target))}";
+	}
+
 	public override string VisitScalar(ScalarNode node, SchemaWalkerContext context) {
 		return "scalar";
 	}
@@ -41,6 +45,24 @@ public class DefinitionWalkerTests {
 		Assert.Equal(
 			"scalar",
 			walker.Visit(scalarNode, new SchemaWalkerContext())
+		);
+	}
+
+	[Fact]
+	public void VisitReference() {
+		var referenceNode = new ReferenceNode() {
+			Targets = new List<ReferenceTarget>() {
+				new ReferenceTarget("Target1"),
+				new ConditionalReferenceTarget("Target2") {
+					FieldOffset = -1,
+					Value = 1
+				},
+			},
+		};
+
+		Assert.Equal(
+			"ref|Target1,Target2",
+			walker.Visit(referenceNode, new SchemaWalkerContext())
 		);
 	}
 
@@ -93,12 +115,15 @@ public class DefinitionWalkerTests {
 						{ "3", new ScalarNode() }
 					}),
 					5
-				) }
+				) },
+				{ "3", new ReferenceNode() {
+					Targets = new List<ReferenceTarget>() { new ReferenceTarget("Target") },
+				} },
 			}) }
 		});
 
 		Assert.Equal(
-			"{test:{1:scalar,2:{3:scalar}[5]}}",
+			"{test:{1:scalar,2:{3:scalar}[5],3:ref|Target}}",
 			walker.Visit(rootNode, new SchemaWalkerContext())
 		);
 	}

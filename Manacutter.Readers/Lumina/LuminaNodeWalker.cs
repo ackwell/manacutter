@@ -42,6 +42,10 @@ internal class LuminaNodeWalker : SchemaWalker<SchemaWalkerContext, object>, IRo
 		return value;
 	}
 
+	public override object VisitReference(ReferenceNode node, SchemaWalkerContext context) {
+		throw new NotImplementedException();
+	}
+
 	public override object VisitScalar(ScalarNode node, SchemaWalkerContext context) {
 		var index = context.Offset;
 		var value = this.rowParser.ReadColumnRaw((int)index);

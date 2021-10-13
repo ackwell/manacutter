@@ -9,6 +9,7 @@ internal record BackfillContext : SchemaWalkerContext {
 	public HashSet<uint>? DefinedColumns { get; init; }
 }
 
+// TODO: This is, due to the reader, reliant on the current game version. If we keep this as-is, it'll need to be computed, and cached, per game version.
 internal class Backfill : TransformerWalker<BackfillContext> {
 	private readonly IReader reader;
 

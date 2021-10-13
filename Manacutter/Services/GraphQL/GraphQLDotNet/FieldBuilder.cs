@@ -136,6 +136,10 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 		return nodeGraphType;
 	}
 
+	public override FieldType VisitReference(ReferenceNode node, FieldBuilderContext context) {
+		throw new NotImplementedException();
+	}
+
 	public override FieldType VisitStruct(StructNode node, FieldBuilderContext context) {
 		var type = new ObjectGraphType() {
 			Name = string.Join('_', context.Path.Select(part => part.Pascalize())),

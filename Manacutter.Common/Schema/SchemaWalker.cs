@@ -77,5 +77,7 @@ public abstract class SchemaWalker<TContext, TReturn>
 		});
 	}
 
+	public abstract TReturn VisitReference(ReferenceNode node, TContext context);
+
 	public abstract TReturn VisitScalar(ScalarNode node, TContext context);
 }

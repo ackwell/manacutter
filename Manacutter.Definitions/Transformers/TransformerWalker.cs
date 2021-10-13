@@ -37,6 +37,10 @@ abstract internal class TransformerWalker<TContext>
 		return node with { Type = this.WalkArray(node, context) };
 	}
 
+	public override SchemaNode VisitReference(ReferenceNode node, TContext context) {
+		return node;
+	}
+
 	public override SchemaNode VisitScalar(ScalarNode node, TContext context) {
 		return node;
 	}
