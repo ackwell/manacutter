@@ -108,13 +108,142 @@ internal class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 						.Peel<Git.Blob>()
 						.GetContentText();
 
-					var definition = this.GetDefinition(content);
-					return this.GetRootNode(definition);
+					// TODO: This supports reading a stream - might be able to stream straight from git into this?
+					using var document = JsonDocument.Parse(content);
+					return ReadSheetDefinition(document.RootElement);
+					//var definition = this.GetDefinition(content);
+					//return this.GetRootNode(definition);
 				}
 			);
 
 		return new SheetsNode(sheets);
 	}
+
+	// -----
+
+	private SchemaNode ReadSheetDefinition(in JsonElement element) {
+		var fields = new Dictionary<string, SchemaNode>();
+
+		// TODO: NAMES!
+		var i = 0;
+
+		var definitions = element.GetProperty("definitions");
+		foreach (var definition in definitions.EnumerateArray()) {
+			fields.Add($"TODO{i++}", this.ReadPositionedDataDefinition(definition));
+		}
+
+		return new StructNode(fields);
+	}
+
+	// todo hook up
+	private SchemaNode ReadPositionedDataDefinition(in JsonElement element) {
+		var index = element.TryGetProperty("index", out var property)
+			? property.GetUInt32()
+			: 0;
+
+		return this.ReadDataDefinition(element) with { Offset = index };
+	}
+
+	private SchemaNode ReadDataDefinition(in JsonElement element) {
+		var type = element.TryGetProperty("type", out var property)
+			? property.GetString()
+			: null;
+
+		return type switch {
+			null => this.ReadSingleDataDefinition(element),
+			"group" => this.ReadGroupDataDefinition(element),
+			"repeat" => this.ReadRepeatDataDefinition(element),
+			_ => throw new NotImplementedException(type)
+		};
+	}
+
+	private SchemaNode ReadSingleDataDefinition(in JsonElement element) {
+		var converterExists = element.TryGetProperty("converter", out var converter);
+
+		if (!converterExists) {
+			return new ScalarNode();
+		}
+
+		var type = converter.TryGetProperty("type", out var property)
+			? property.GetString()
+			: null;
+
+		return type switch {
+			"color" => this.ReadColorConverter(converter),
+			"generic" => this.ReadGenericReferenceConverter(converter),
+			"icon" => this.ReadIconConverter(converter),
+			"multiref" => this.ReadMultiReferenceConverter(converter),
+			"link" => this.ReadSheetLinkConverter(converter),
+			"tomestone" => this.ReadTomestoneOrItemReferenceConverter(converter),
+			"complexlink" => this.ReadComplexLinkConverter(converter),
+			_ => throw new NotImplementedException(type),
+		};
+	}
+
+	private SchemaNode ReadGroupDataDefinition(in JsonElement element) {
+		// TODO: size
+		// TODO: name?
+
+		// TODO: VERY TEMP
+		var i = 0;
+
+		var fields = new Dictionary<string, SchemaNode>();
+
+		var members = element.GetProperty("members");
+		foreach (var member in members.EnumerateArray()) {
+			fields.Add($"TODO{i++}", this.ReadDataDefinition(member));
+		}
+
+		return new StructNode(fields);
+	}
+
+	private SchemaNode ReadRepeatDataDefinition(in JsonElement element) {
+		return new ArrayNode(
+			this.ReadDataDefinition(element.GetProperty("definition")),
+			element.GetProperty("count").GetUInt32()
+		);
+	}
+
+	private SchemaNode ReadColorConverter(in JsonElement element) {
+		// TODO: ?
+		return new ScalarNode();
+	}
+
+	private SchemaNode ReadGenericReferenceConverter(in JsonElement element) {
+		// TODO: ?
+		return new ScalarNode();
+	}
+
+	private SchemaNode ReadIconConverter(in JsonElement element) {
+		// TODO: ?
+		return new ScalarNode();
+	}
+
+	private SchemaNode ReadMultiReferenceConverter(in JsonElement element) {
+		// TODO: Reference node
+		// element["targets"] = array of target sheet names
+		return new ScalarNode();
+	}
+
+	private SchemaNode ReadSheetLinkConverter(in JsonElement element) {
+		// TODO: Reference node
+		// element["target"] = target sheet name
+		return new ScalarNode();
+	}
+
+	private SchemaNode ReadTomestoneOrItemReferenceConverter(in JsonElement element) {
+		// TODO: ?
+		return new ScalarNode();
+	}
+
+	private SchemaNode ReadComplexLinkConverter(in JsonElement element) {
+		// TODO: Reference node.
+		// Yikes.
+		// https://github.com/xivapi/SaintCoinach/blob/111543bf399c709529237cfb25f77650ddb0126f/SaintCoinach/Ex/Relational/ValueConverters/ComplexLinkConverter.cs#L143
+		return new ScalarNode();
+	}
+
+	// -----
 
 	private SchemaNode GetRootNode(SheetDefinition sheetDefinition) {
 		// TODO: this is duped with group reader, possibly consolidate
