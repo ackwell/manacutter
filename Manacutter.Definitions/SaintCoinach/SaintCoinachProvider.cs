@@ -124,27 +124,25 @@ internal class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 	private SchemaNode ReadSheetDefinition(in JsonElement element) {
 		var fields = new Dictionary<string, SchemaNode>();
 
-		// TODO: NAMES!
-		var i = 0;
-
 		var definitions = element.GetProperty("definitions");
 		foreach (var definition in definitions.EnumerateArray()) {
-			fields.Add($"TODO{i++}", this.ReadPositionedDataDefinition(definition));
+			var (node, name) = this.ReadPositionedDataDefinition(definition);
+			fields.Add(name ?? $"Unnamed{node.Offset}", node);
 		}
 
 		return new StructNode(fields);
 	}
 
-	// todo hook up
-	private SchemaNode ReadPositionedDataDefinition(in JsonElement element) {
+	private (SchemaNode, string?) ReadPositionedDataDefinition(in JsonElement element) {
 		var index = element.TryGetProperty("index", out var property)
 			? property.GetUInt32()
 			: 0;
 
-		return this.ReadDataDefinition(element) with { Offset = index };
+		var (node, name) = this.ReadDataDefinition(element);
+		return (node with { Offset = index }, name);
 	}
 
-	private SchemaNode ReadDataDefinition(in JsonElement element) {
+	private (SchemaNode, string?) ReadDataDefinition(in JsonElement element) {
 		var type = element.TryGetProperty("type", out var property)
 			? property.GetString()
 			: null;
@@ -157,18 +155,19 @@ internal class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 		};
 	}
 
-	private SchemaNode ReadSingleDataDefinition(in JsonElement element) {
+	private (SchemaNode, string?) ReadSingleDataDefinition(in JsonElement element) {
+		var name = element.GetProperty("name").GetString();
 		var converterExists = element.TryGetProperty("converter", out var converter);
 
 		if (!converterExists) {
-			return new ScalarNode();
+			return (new ScalarNode(), name);
 		}
 
 		var type = converter.TryGetProperty("type", out var property)
 			? property.GetString()
 			: null;
 
-		return type switch {
+		var node = type switch {
 			"color" => this.ReadColorConverter(converter),
 			"generic" => this.ReadGenericReferenceConverter(converter),
 			"icon" => this.ReadIconConverter(converter),
@@ -178,11 +177,12 @@ internal class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 			"complexlink" => this.ReadComplexLinkConverter(converter),
 			_ => throw new NotImplementedException(type),
 		};
+
+		return (node, name);
 	}
 
-	private SchemaNode ReadGroupDataDefinition(in JsonElement element) {
+	private (SchemaNode, string?) ReadGroupDataDefinition(in JsonElement element) {
 		// TODO: size
-		// TODO: name?
 
 		// TODO: VERY TEMP
 		var i = 0;
@@ -191,16 +191,22 @@ internal class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 
 		var members = element.GetProperty("members");
 		foreach (var member in members.EnumerateArray()) {
-			fields.Add($"TODO{i++}", this.ReadDataDefinition(member));
+			var (childNode, childName) = this.ReadDataDefinition(member);
+			fields.Add(childName ?? $"Unnamed{i++}", childNode);
 		}
 
-		return new StructNode(fields);
+		var node = new StructNode(fields);
+		var lcs = fields.Keys.Aggregate(GetLCS);
+		var name = lcs != "" ? lcs : null;
+
+		return (new StructNode(fields), name);
 	}
 
-	private SchemaNode ReadRepeatDataDefinition(in JsonElement element) {
-		return new ArrayNode(
-			this.ReadDataDefinition(element.GetProperty("definition")),
-			element.GetProperty("count").GetUInt32()
+	private (SchemaNode, string?) ReadRepeatDataDefinition(in JsonElement element) {
+		var (childNode, childName) = this.ReadDataDefinition(element.GetProperty("definition"));
+		return (
+			new ArrayNode(childNode, element.GetProperty("count").GetUInt32()),
+			childName
 		);
 	}
 
