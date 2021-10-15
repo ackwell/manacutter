@@ -3,10 +3,10 @@
 /// <summary> Representation of a group of named nodes.</summary>
 public record StructNode : SchemaNode {
 	/// <summary>Mapping of names to their associated node trees.</summary>
-	public IReadOnlyDictionary<string, SchemaNode> Fields { get; init; }
+	public IReadOnlyDictionary<string, (uint Offset, SchemaNode Node)> Fields { get; init; }
 
 	public StructNode(
-		IReadOnlyDictionary<string, SchemaNode> fields
+		IReadOnlyDictionary<string, (uint, SchemaNode)> fields
 	) {
 		this.Fields = fields;
 	}
@@ -14,7 +14,7 @@ public record StructNode : SchemaNode {
 	public override uint Size {
 		get => this.Fields.Values.Aggregate(
 			(uint)0,
-			(size, node) => size + node.Size
+			(size, value) => size + value.Node.Size
 		);
 	}
 

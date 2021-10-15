@@ -54,13 +54,15 @@ public abstract class SchemaWalker<TContext, TReturn>
 		return node.Fields.ToDictionary(
 			pair => pair.Key,
 			pair => {
+				var (offset, node) = pair.Value;
+
 				var newContext = context with {
-					Offset = context.Offset + pair.Value.Offset
+					Offset = context.Offset + offset
 				};
 				if (contextTransform is not null) {
-					newContext = contextTransform(newContext, pair.Key, pair.Value);
+					newContext = contextTransform(newContext, pair.Key, node);
 				}
-				return this.Visit(pair.Value, newContext);
+				return this.Visit(node, newContext);
 			}
 		);
 	}
@@ -73,7 +75,7 @@ public abstract class SchemaWalker<TContext, TReturn>
 	/// <returns>Visitor result.</returns>
 	protected TReturn WalkArray(ArrayNode node, TContext context) {
 		return this.Visit(node.Type, context with {
-			Offset = context.Offset + node.Type.Offset
+			Offset = context.Offset
 		});
 	}
 

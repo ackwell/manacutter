@@ -5,26 +5,26 @@ namespace Manacutter.Definitions.SaintCoinach;
 
 internal static class DefinitionReader {
 	/// <seealso href="https://github.com/xivapi/SaintCoinach/blob/800eab3e9dd4a2abc625f53ce84dad24c8579920/SaintCoinach/Ex/Relational/Definition/SheetDefinition.cs#L157">SheetDefinition.cs#L157</seealso>
+	/// <seealso href="https://github.com/xivapi/SaintCoinach/blob/800eab3e9dd4a2abc625f53ce84dad24c8579920/SaintCoinach/Ex/Relational/Definition/PositionedDataDefinition.cs#L71">PositionedDataDefinition.cs#L71</seealso>
 	internal static SchemaNode ReadSheetDefinition(in JsonElement element) {
-		var fields = new Dictionary<string, SchemaNode>();
+		var fields = new Dictionary<string, (uint, SchemaNode)>();
 
 		var definitions = element.GetProperty("definitions");
 		foreach (var definition in definitions.EnumerateArray()) {
-			var (node, name) = ReadPositionedDataDefinition(definition);
-			fields.Add(name ?? $"Unnamed{node.Offset}", node);
+			// PositionedDataDefinition inlined as it's only used in one location, and makes setting up the struct fields simpler
+			var index = definition.TryGetProperty("index", out var property)
+				? property.GetUInt32()
+				: 0;
+
+			var (node, name) = ReadDataDefinition(definition);
+
+			fields.Add(
+				name ?? $"Unnamed{index}",
+				(index, node)
+			);
 		}
 
 		return new StructNode(fields);
-	}
-
-	/// <seealso href="https://github.com/xivapi/SaintCoinach/blob/800eab3e9dd4a2abc625f53ce84dad24c8579920/SaintCoinach/Ex/Relational/Definition/PositionedDataDefinition.cs#L71">PositionedDataDefinition.cs#L71</seealso>
-	private static (SchemaNode, string?) ReadPositionedDataDefinition(in JsonElement element) {
-		var index = element.TryGetProperty("index", out var property)
-			? property.GetUInt32()
-			: 0;
-
-		var (node, name) = ReadDataDefinition(element);
-		return (node with { Offset = index }, name);
 	}
 
 	/// <seealso href="https://github.com/xivapi/SaintCoinach/blob/800eab3e9dd4a2abc625f53ce84dad24c8579920/SaintCoinach/Ex/Relational/Definition/IDataDefinition.cs#L34">IDataDefinition.cs#L34</seealso>
@@ -71,7 +71,7 @@ internal static class DefinitionReader {
 
 	/// <seealso href="https://github.com/xivapi/SaintCoinach/blob/800eab3e9dd4a2abc625f53ce84dad24c8579920/SaintCoinach/Ex/Relational/Definition/GroupDataDefinition.cs#L125">GroupDataDefinition.cs#L125</seealso>
 	private static (SchemaNode, string?) ReadGroupDataDefinition(in JsonElement element) {
-		var fields = new Dictionary<string, SchemaNode>();
+		var fields = new Dictionary<string, (uint, SchemaNode)>();
 
 		uint size = 0;
 		var members = element.GetProperty("members");
@@ -79,7 +79,7 @@ internal static class DefinitionReader {
 			var (childNode, childName) = ReadDataDefinition(member);
 			fields.Add(
 				childName ?? $"Unnamed{size++}",
-				childNode with { Offset = size }
+				(size, childNode)
 			);
 			size += childNode.Size;
 		}

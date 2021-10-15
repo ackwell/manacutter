@@ -19,8 +19,9 @@ internal class CollapseSimple : TransformerWalker<CollapseSimpleContext> {
 			return base.VisitStruct(node, nextContext);
 		}
 
-		var child = node.Fields.First().Value;
-		return this.Visit(child with { Offset = child.Offset + node.Offset }, nextContext);
+		// We can ignore the offset on single-field non-root structs, it'll always be zero. Technically.
+		var child = node.Fields.First().Value.Node;
+		return this.Visit(child, nextContext);
 	}
 
 	public override SchemaNode VisitArray(ArrayNode node, CollapseSimpleContext context) {
@@ -29,7 +30,6 @@ internal class CollapseSimple : TransformerWalker<CollapseSimpleContext> {
 			return base.VisitArray(node, context);
 		}
 
-		var child = node.Type with { Offset = node.Type.Offset + node.Offset };
-		return this.Visit(child, context);
+		return this.Visit(node.Type, context);
 	}
 }
