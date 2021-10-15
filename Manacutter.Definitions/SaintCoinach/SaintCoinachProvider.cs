@@ -83,7 +83,6 @@ internal class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 		return commit.Sha;
 	}
 
-	// TODO: the results of this function should probably be cached in some manner
 	public SheetsNode GetSheets(string gitRef) {
 		var commit = this.repository?
 			.Lookup(gitRef, Git.ObjectType.Commit)?
@@ -103,21 +102,18 @@ internal class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 				tree => tree.Name.Substring(0, tree.Name.Length - 5),
 				tree => {
 					// TODO: this needs to be cleaned up a bit.
-					var content = tree
+					var contentStream = tree
 						.Target
 						.Peel<Git.Blob>()
-						.GetContentText();
+						.GetContentStream();
 
-					// TODO: This supports reading a stream - might be able to stream straight from git into this?
-					using var document = JsonDocument.Parse(content);
+					using var document = JsonDocument.Parse(contentStream);
 					return ReadSheetDefinition(document.RootElement);
 				}
 			);
 
 		return new SheetsNode(sheets);
 	}
-
-	// -----
 
 	private SchemaNode ReadSheetDefinition(in JsonElement element) {
 		var fields = new Dictionary<string, SchemaNode>();
