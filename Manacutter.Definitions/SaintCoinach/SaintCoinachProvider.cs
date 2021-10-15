@@ -182,17 +182,17 @@ internal class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 	}
 
 	private (SchemaNode, string?) ReadGroupDataDefinition(in JsonElement element) {
-		// TODO: size
-
-		// TODO: VERY TEMP
-		var i = 0;
-
 		var fields = new Dictionary<string, SchemaNode>();
 
+		uint size = 0;
 		var members = element.GetProperty("members");
 		foreach (var member in members.EnumerateArray()) {
 			var (childNode, childName) = this.ReadDataDefinition(member);
-			fields.Add(childName ?? $"Unnamed{i++}", childNode);
+			fields.Add(
+				childName ?? $"Unnamed{size++}",
+				childNode with { Offset = size }
+			);
+			size += childNode.Size;
 		}
 
 		var node = new StructNode(fields);
