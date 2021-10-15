@@ -111,8 +111,6 @@ internal class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 					// TODO: This supports reading a stream - might be able to stream straight from git into this?
 					using var document = JsonDocument.Parse(content);
 					return ReadSheetDefinition(document.RootElement);
-					//var definition = this.GetDefinition(content);
-					//return this.GetRootNode(definition);
 				}
 			);
 
@@ -249,84 +247,6 @@ internal class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 		return new ScalarNode();
 	}
 
-	// -----
-
-	private SchemaNode GetRootNode(SheetDefinition sheetDefinition) {
-		// TODO: this is duped with group reader, possibly consolidate
-		var fields = new Dictionary<string, SchemaNode>();
-		foreach (var column in sheetDefinition.Definitions) {
-			var (node, name) = this.ParseDefinition(column, 0);
-			fields.Add(
-				column.Name ?? name ?? $"Unnamed{column.Index}",
-				node
-			);
-		}
-		var rootNode = new StructNode(fields);
-
-		return rootNode;
-	}
-
-	private (SchemaNode, string?) ParseDefinition(DefinitionEntry definition, uint offset) {
-		return definition.Type switch {
-			null => this.ParseScalarDefinition(definition, offset),
-			"repeat" => this.ParseRepeatDefinition(definition, offset),
-			"group" => this.ParseGroupDefinition(definition, offset),
-			_ => throw new ArgumentException($"Unknown definition type {definition.Type} at index {definition.Index}."),
-		};
-	}
-
-	private (SchemaNode, string?) ParseScalarDefinition(DefinitionEntry definition, uint offset) {
-		var node = new ScalarNode() {
-			Offset = definition.Index + offset,
-		};
-
-		return (node, definition.Name);
-	}
-
-	private (SchemaNode, string?) ParseRepeatDefinition(DefinitionEntry definition, uint offset) {
-		if (
-			definition.Definition is null
-			|| definition.Count is null
-		) {
-			throw new ArgumentException($"Invalid repeat definition.");
-		}
-
-		var (childNode, name) = this.ParseDefinition(definition.Definition, 0);
-		var node = new ArrayNode(childNode, (uint)definition.Count) {
-			Offset = definition.Index + offset,
-		};
-		return (node, name);
-	}
-
-	private (SchemaNode, string?) ParseGroupDefinition(DefinitionEntry definition, uint offset) {
-		if (definition.Members is null) {
-			throw new ArgumentException($"Invalid group definition.");
-		}
-
-		var fields = new Dictionary<string, SchemaNode>();
-		uint size = 0;
-		foreach (var member in definition.Members) {
-			var (childNode, childName) = this.ParseDefinition(member, size);
-
-			fields.Add(
-				member.Name ?? childName ?? $"Unnamed{member.Index}",
-				childNode
-			);
-
-			size += childNode.Size;
-		}
-
-		var node = new StructNode(fields) {
-			Offset = definition.Index + offset,
-		};
-		var name = definition.Name;
-		if (name is null) {
-			var lcs = fields.Keys.Aggregate(GetLCS);
-			name = lcs != "" ? lcs : null;
-		}
-		return (node, name);
-	}
-
 	// TODO: Move this somewhere more sensible lmao
 	// TODO: Check if we need to look into optimisations e.g. suffix tree
 	// Thanks, wikipedia
@@ -364,23 +284,5 @@ internal class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 		}
 
 		return output;
-	}
-
-	// TODO: This can probably be completely removed as part of moving to a more StC-accurate deser step.
-	private SheetDefinition GetDefinition(string content) {
-		// TODO: This should probably be cached on some basis
-		var sheetDefinition = JsonSerializer.Deserialize<SheetDefinition>(
-			content,
-			new JsonSerializerOptions {
-				PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-			}
-		);
-
-		// TODO: What error should this even be idfk.
-		if (sheetDefinition is null) {
-			throw new Exception($"Could not deserialize sheet.");
-		}
-
-		return sheetDefinition;
 	}
 }
