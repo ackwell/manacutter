@@ -127,9 +127,17 @@ internal static class DefinitionReader {
 
 	/// <seealso href="https://github.com/xivapi/SaintCoinach/blob/800eab3e9dd4a2abc625f53ce84dad24c8579920/SaintCoinach/Ex/Relational/ValueConverters/SheetLinkConverter.cs#L40">SheetLinkConverter.cs#L40</seealso>
 	private static SchemaNode ReadSheetLinkConverter(in JsonElement element) {
-		// TODO: Reference node
-		// element["target"] = target sheet name
-		return new ScalarNode();
+		var target = element.GetProperty("target").GetString();
+
+		if (target is null) {
+			throw new ArgumentNullException("target");
+		}
+
+		return new ReferenceNode() {
+			Targets = new[] {
+				new ReferenceTarget(target),
+			},
+		};
 	}
 
 	/// <seealso href="https://github.com/xivapi/SaintCoinach/blob/800eab3e9dd4a2abc625f53ce84dad24c8579920/SaintCoinach/Ex/Relational/ValueConverters/TomestoneOrItemReferenceConverter.cs#L54">TomestoneOrItemReferenceConverter.cs#L54</seealso>

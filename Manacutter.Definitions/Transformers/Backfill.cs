@@ -77,6 +77,11 @@ internal class Backfill : TransformerWalker<BackfillContext> {
 		return newNode;
 	}
 
+	public override SchemaNode VisitReference(ReferenceNode node, BackfillContext context) {
+		context.DefinedColumns?.Add(context.Offset);
+		return node;
+	}
+
 	public override SchemaNode VisitScalar(ScalarNode node, BackfillContext context) {
 		// Record this column as being defined
 		context.DefinedColumns?.Add(context.Offset);
@@ -85,6 +90,7 @@ internal class Backfill : TransformerWalker<BackfillContext> {
 			return base.VisitScalar(node, context);
 		}
 
+		// Work out the column's type
 		var column = context.Sheet.GetColumn(context.Offset);
 
 		return base.VisitScalar(node with {

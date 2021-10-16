@@ -1,15 +1,25 @@
-﻿using Lumina.Data.Structs.Excel;
+using Lumina.Data.Structs.Excel;
 using Lumina.Excel;
 using Manacutter.Common.Schema;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Manacutter.Readers.Lumina;
 
 internal class LuminaNodeWalker : SchemaWalker<SchemaWalkerContext, object>, IRowReader {
+	internal static LuminaNodeWalker Create(IServiceProvider provider, RowParser parser) {
+		return ActivatorUtilities.CreateInstance<LuminaNodeWalker>(provider, parser);
+	}
+
+	// TODO: this should realistically be pulling in explicitly the lumina reader to make sure it doesn't swap impl halfway through handling?
+	//       then again, we might not actually need it in here at all
+	private IReader reader;
 	private readonly RowParser rowParser;
 
-	internal LuminaNodeWalker(
+	public LuminaNodeWalker(
+		IReader reader,
 		RowParser rowParser
 	) {
+		this.reader = reader;
 		this.rowParser = rowParser;
 	}
 
@@ -43,7 +53,35 @@ internal class LuminaNodeWalker : SchemaWalker<SchemaWalkerContext, object>, IRo
 	}
 
 	public override object VisitReference(ReferenceNode node, SchemaWalkerContext context) {
-		throw new NotImplementedException();
+		// TODO: We should probably maintain a list of visited rows (maybe even non-scoped?) to prevent infinite recursion
+		// TODO: Sanity check the column type - is there a single type that's _always_ used for reference IDs?
+		//       Sounds like it's any numeric type, so check against bool,string,etc.
+		var targetRowId = Convert.ToUInt32(this.rowParser.ReadColumnRaw((int)context.Offset));
+
+		// Console.WriteLine(string.Join(',', node.Targets.Select(target => target.Target)));
+
+		foreach (var target in node.Targets) {
+			// TODO: conditional link checks here
+			if (target is ConditionalReferenceTarget) {
+				throw new NotImplementedException();
+			}
+
+			var sheet = this.reader.GetSheet(target.Target);
+			if (sheet is null) { continue; }
+
+			// TODO: handle subrows - probably want to enumeraterows.takewhile or something
+			if (sheet.HasSubrows) {
+				throw new NotImplementedException();
+			}
+
+			Console.WriteLine($"resolving {context.Offset} to {target.Target}");
+			var row = sheet.GetRow(targetRowId);
+			//row.Read()
+			// TODO: we need the schema for all sheets at this point
+			break;
+		}
+
+		return targetRowId;
 	}
 
 	public override object VisitScalar(ScalarNode node, SchemaWalkerContext context) {
