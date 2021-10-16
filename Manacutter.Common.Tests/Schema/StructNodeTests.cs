@@ -13,7 +13,7 @@ public class StructNodeTests {
 			.Range(0, (int)count)
 			.ToDictionary(
 				value => value.ToString(),
-				_ => new ScalarNode() as SchemaNode
+				value => ((uint)value, new ScalarNode() as SchemaNode)
 			);
 
 		var structNode = new StructNode(fields);

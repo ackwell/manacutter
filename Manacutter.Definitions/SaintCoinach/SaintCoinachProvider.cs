@@ -83,7 +83,6 @@ internal class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 		return commit.Sha;
 	}
 
-	// TODO: the results of this function should probably be cached in some manner
 	public SheetsNode GetSheets(string gitRef) {
 		var commit = this.repository?
 			.Lookup(gitRef, Git.ObjectType.Commit)?
@@ -103,149 +102,16 @@ internal class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 				tree => tree.Name.Substring(0, tree.Name.Length - 5),
 				tree => {
 					// TODO: this needs to be cleaned up a bit.
-					var content = tree
+					var contentStream = tree
 						.Target
 						.Peel<Git.Blob>()
-						.GetContentText();
+						.GetContentStream();
 
-					var definition = this.GetDefinition(content);
-					return this.GetRootNode(definition);
+					using var document = JsonDocument.Parse(contentStream);
+					return DefinitionReader.ReadSheetDefinition(document.RootElement);
 				}
 			);
 
 		return new SheetsNode(sheets);
-	}
-
-	private SchemaNode GetRootNode(SheetDefinition sheetDefinition) {
-		// TODO: this is duped with group reader, possibly consolidate
-		var fields = new Dictionary<string, SchemaNode>();
-		foreach (var column in sheetDefinition.Definitions) {
-			var (node, name) = this.ParseDefinition(column, 0);
-			fields.Add(
-				column.Name ?? name ?? $"Unnamed{column.Index}",
-				node
-			);
-		}
-		var rootNode = new StructNode(fields);
-
-		return rootNode;
-	}
-
-	private (SchemaNode, string?) ParseDefinition(DefinitionEntry definition, uint offset) {
-		return definition.Type switch {
-			null => this.ParseScalarDefinition(definition, offset),
-			"repeat" => this.ParseRepeatDefinition(definition, offset),
-			"group" => this.ParseGroupDefinition(definition, offset),
-			_ => throw new ArgumentException($"Unknown definition type {definition.Type} at index {definition.Index}."),
-		};
-	}
-
-	private (SchemaNode, string?) ParseScalarDefinition(DefinitionEntry definition, uint offset) {
-		var node = new ScalarNode() {
-			Offset = definition.Index + offset,
-		};
-
-		return (node, definition.Name);
-	}
-
-	private (SchemaNode, string?) ParseRepeatDefinition(DefinitionEntry definition, uint offset) {
-		if (
-			definition.Definition is null
-			|| definition.Count is null
-		) {
-			throw new ArgumentException($"Invalid repeat definition.");
-		}
-
-		var (childNode, name) = this.ParseDefinition(definition.Definition, 0);
-		var node = new ArrayNode(childNode, (uint)definition.Count) {
-			Offset = definition.Index + offset,
-		};
-		return (node, name);
-	}
-
-	private (SchemaNode, string?) ParseGroupDefinition(DefinitionEntry definition, uint offset) {
-		if (definition.Members is null) {
-			throw new ArgumentException($"Invalid group definition.");
-		}
-
-		var fields = new Dictionary<string, SchemaNode>();
-		uint size = 0;
-		foreach (var member in definition.Members) {
-			var (childNode, childName) = this.ParseDefinition(member, size);
-
-			fields.Add(
-				member.Name ?? childName ?? $"Unnamed{member.Index}",
-				childNode
-			);
-
-			size += childNode.Size;
-		}
-
-		var node = new StructNode(fields) {
-			Offset = definition.Index + offset,
-		};
-		var name = definition.Name;
-		if (name is null) {
-			var lcs = fields.Keys.Aggregate(GetLCS);
-			name = lcs != "" ? lcs : null;
-		}
-		return (node, name);
-	}
-
-	// TODO: Move this somewhere more sensible lmao
-	// TODO: Check if we need to look into optimisations e.g. suffix tree
-	// Thanks, wikipedia
-	private static string GetLCS(string a, string b) {
-		// Initalise table
-		int[,] table = new int[a.Length + 1, b.Length + 1];
-
-		// LCS algo
-		int i;
-		int j;
-		for (i = 1; i <= a.Length; i++) {
-			for (j = 1; j <= b.Length; j++) {
-				table[i, j] = a[i - 1] == b[j - 1]
-					? table[i, j] = table[i - 1, j - 1] + 1
-					: table[i - 1, j] > table[i, j - 1]
-						? table[i - 1, j]
-						: table[i, j - 1];
-			}
-		}
-
-		// Backtrack the table into a string
-		var output = "";
-		i = a.Length;
-		j = b.Length;
-		while (i > 0 && j > 0) {
-			if (a[i - 1] == b[j - 1]) {
-				output = a[i - 1] + output;
-				i--;
-				j--;
-			} else if (table[i - 1, j] > table[i, j - 1]) {
-				i--;
-			} else {
-				j--;
-			}
-		}
-
-		return output;
-	}
-
-	// TODO: This can probably be completely removed as part of moving to a more StC-accurate deser step.
-	private SheetDefinition GetDefinition(string content) {
-		// TODO: This should probably be cached on some basis
-		var sheetDefinition = JsonSerializer.Deserialize<SheetDefinition>(
-			content,
-			new JsonSerializerOptions {
-				PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-			}
-		);
-
-		// TODO: What error should this even be idfk.
-		if (sheetDefinition is null) {
-			throw new Exception($"Could not deserialize sheet.");
-		}
-
-		return sheetDefinition;
 	}
 }

@@ -30,7 +30,12 @@ abstract internal class TransformerWalker<TContext>
 	}
 
 	public override SchemaNode VisitStruct(StructNode node, TContext context) {
-		return node with { Fields = this.WalkStruct(node, context) };
+		var fields = this.WalkStruct(node, context).ToDictionary(
+			pair => pair.Key,
+			pair => (node.Fields[pair.Key].Offset, pair.Value)
+		);
+
+		return node with { Fields = fields };
 	}
 
 	public override SchemaNode VisitArray(ArrayNode node, TContext context) {

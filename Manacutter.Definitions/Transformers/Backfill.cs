@@ -48,14 +48,13 @@ internal class Backfill : TransformerWalker<BackfillContext> {
 		}
 
 		// Find any column indexes not accounted for and add nodes for them
-		var fields = new Dictionary<string, SchemaNode>(newNode.Fields);
+		var fields = new Dictionary<string, (uint, SchemaNode)>(newNode.Fields);
 		for (uint index = 0; index < expectedCount; index++) {
 			if (columns.Contains(index)) { continue; }
 
-			fields.Add($"Unknown{index}", new ScalarNode() {
-				Offset = index,
+			fields.Add($"Unknown{index}", (index, new ScalarNode() {
 				Type = context.Sheet?.GetColumn(index)?.Type ?? ScalarType.Unknown,
-			});
+			}));
 		}
 
 		return newNode with { Fields = fields };

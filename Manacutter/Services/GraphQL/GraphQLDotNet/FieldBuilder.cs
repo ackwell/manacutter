@@ -157,7 +157,7 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 			Resolver = new FuncFieldResolver<object>(context => {
 				var executionContext = (ExecutionContext)context.Source!;
 				// TODO: this should be using the walker context offset
-				return executionContext with { Offset = executionContext.Offset + node.Offset };
+				return executionContext with { Offset = executionContext.Offset };
 			})
 		};
 	}
@@ -170,7 +170,7 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 			ResolvedType = new ListGraphType(fieldType.ResolvedType),
 			Resolver = new FuncFieldResolver<object>(context => {
 				var executionContext = (ExecutionContext)context.Source!;
-				var baseOffset = executionContext.Offset + node.Offset;
+				var baseOffset = executionContext.Offset;
 				var elementWidth = node.Type.Size;
 
 				var execContexts = context.ArrayPool.Rent<ExecutionContext>((int)node.Count);
@@ -218,7 +218,7 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 			ResolvedType = graphType,
 			Resolver = new FuncFieldResolver<object>(context => {
 				var execContext = (ExecutionContext)context.Source!;
-				return execContext.Row?.Read(node, execContext.Offset + node.Offset);
+				return execContext.Row?.Read(node, execContext.Offset);
 			}),
 		};
 	}

@@ -80,9 +80,9 @@ public class DefinitionWalkerTests {
 	[Fact]
 	public void VisitStruct() {
 		var scalarNode = new ScalarNode();
-		var structNode = new StructNode(new Dictionary<string, SchemaNode>() {
-			{ "1", scalarNode },
-			{ "2", scalarNode }
+		var structNode = new StructNode(new Dictionary<string, (uint, SchemaNode)>() {
+			{ "1", (0, scalarNode) },
+			{ "2", (1, scalarNode) }
 		});
 
 		Assert.Equal(
@@ -108,22 +108,22 @@ public class DefinitionWalkerTests {
 	[Fact]
 	public void VisitComplex() {
 		var rootNode = new SheetsNode(new Dictionary<string, SchemaNode>() {
-			{ "test", new StructNode(new Dictionary<string, SchemaNode>() {
-				{ "1", new ScalarNode() },
-				{ "2", new ArrayNode(
-					new StructNode(new Dictionary<string, SchemaNode>() {
-						{ "3", new ScalarNode() }
+			{ "test", new StructNode(new Dictionary<string, (uint, SchemaNode)>() {
+				{ "1", (0, new ScalarNode()) },
+				{ "2", (1, new ArrayNode(
+					new StructNode(new Dictionary<string, (uint, SchemaNode)>() {
+						{ "3", (0, new ScalarNode()) }
 					}),
 					5
 				) },
-				{ "3", new ReferenceNode() {
+				{ "4", (6, new ReferenceNode() {
 					Targets = new List<ReferenceTarget>() { new ReferenceTarget("Target") },
-				} },
+				}) },
 			}) }
 		});
 
 		Assert.Equal(
-			"{test:{1:scalar,2:{3:scalar}[5],3:ref|Target}}",
+			"{test:{1:scalar,2:{3:scalar}[5],4:ref|Target}}",
 			walker.Visit(rootNode, new SchemaWalkerContext())
 		);
 	}
