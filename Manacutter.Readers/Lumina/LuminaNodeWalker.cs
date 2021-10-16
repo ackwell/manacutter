@@ -21,25 +21,15 @@ internal class LuminaNodeWalker : SchemaWalker<SchemaWalkerContext, object>, IRo
 	}
 
 	public override object VisitSheets(SheetsNode node, SchemaWalkerContext context) {
-		// TODO: how do sheet definitions work in the context of reading a row? We might need to rethink how the reader interfaces function a bit, move the reader to the sheets level more akin to the gql structure
 		throw new NotImplementedException();
 	}
 
 	public override object VisitStruct(StructNode node, SchemaWalkerContext context) {
-		return this.WalkStruct(node, context);
+		throw new NotImplementedException();
 	}
 
 	public override object VisitArray(ArrayNode node, SchemaWalkerContext context) {
-		var baseOffset = context.Offset;
-		var elementWidth = node.Type.Size;
-
-		var value = new List<object>();
-		for (uint index = 0; index < node.Count; index++) {
-			var elementOffset = index * elementWidth;
-			value.Add(this.WalkArray(node, context with { Offset = baseOffset + elementOffset }));
-		}
-
-		return value;
+		throw new NotImplementedException();
 	}
 
 	public override object VisitScalar(ScalarNode node, SchemaWalkerContext context) {
