@@ -4,6 +4,7 @@ builder.Services.AddControllers();
 
 builder.Services
 	.AddDefinitions(builder.Configuration)
+	.AddREST()
 	.AddGraphQL()
 	.AddReaders();
 

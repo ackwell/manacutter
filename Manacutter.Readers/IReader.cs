@@ -28,5 +28,5 @@ public interface IRowReader {
 	public uint SubRowID { get; }
 
 	// TODO: Should we have an explicit output type?
-	public object Read(SchemaNode node, uint offset);
+	public object ReadColumn(uint columnIndex);
 }

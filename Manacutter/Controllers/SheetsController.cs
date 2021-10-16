@@ -1,6 +1,7 @@
 ﻿using Manacutter.Common.Schema;
 using Manacutter.Definitions;
 using Manacutter.Readers;
+using Manacutter.Services.REST;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manacutter.Controllers;
@@ -10,13 +11,16 @@ namespace Manacutter.Controllers;
 public class SheetsController : ControllerBase {
 	private readonly IReader reader;
 	private readonly IDefinitions definitions;
+	private readonly RESTBuilder restBuilder;
 
 	public SheetsController(
 		IReader reader,
-		IDefinitions definitions
+		IDefinitions definitions,
+		RESTBuilder restBuilder
 	) {
 		this.reader = reader;
 		this.definitions = definitions;
+		this.restBuilder = restBuilder;
 	}
 
 	[HttpGet]
@@ -59,6 +63,6 @@ public class SheetsController : ControllerBase {
 		}
 
 		// TODO: expose row/subrow ids
-		return this.Ok(row.Read(rootNode, 0));
+		return this.Ok(this.restBuilder.Read(rootNode, row));
 	}
 }
