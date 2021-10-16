@@ -63,6 +63,6 @@ public class SheetsController : ControllerBase {
 		}
 
 		// TODO: expose row/subrow ids
-		return this.Ok(this.restBuilder.Read(rootNode, row));
+		return this.Ok(this.restBuilder.Read(rootNode, sheetsNode, row));
 	}
 }
