@@ -2,19 +2,15 @@
 using Lumina.Data.Structs.Excel;
 using Lumina.Excel;
 using Manacutter.Common.Schema;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Manacutter.Readers.Lumina;
 
 internal class LuminaReader : IReader {
-	private readonly IServiceProvider serviceProvider;
 	private readonly GameData lumina;
 
 	public LuminaReader(
-		IServiceProvider serviceProvider,
 		GameData lumina
 	) {
-		this.serviceProvider = serviceProvider;
 		this.lumina = lumina;
 	}
 
@@ -28,23 +24,16 @@ internal class LuminaReader : IReader {
 			return null;
 		}
 
-		return LuminaSheetReader.Create(this.serviceProvider, sheet);
+		return new LuminaSheetReader(sheet);
 	}
 }
 
 internal class LuminaSheetReader : ISheetReader {
-	internal static LuminaSheetReader Create(IServiceProvider provider, ExcelSheetImpl sheet) {
-		return ActivatorUtilities.CreateInstance<LuminaSheetReader>(provider, sheet);
-	}
-
-	private readonly IServiceProvider serviceProvider;
 	private readonly ExcelSheetImpl sheet;
 
 	public LuminaSheetReader(
-		IServiceProvider serviceProvider,
 		ExcelSheetImpl sheet
 	) {
-		this.serviceProvider = serviceProvider;
 		this.sheet = sheet;
 	}
 
