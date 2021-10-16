@@ -3,30 +3,32 @@ using Manacutter.Readers;
 
 namespace Manacutter.Services.REST;
 
+// TODO: Work out a format for a "column filter" of sorts that can be a context/walkable system (list of things? idk). Doing that, we can remove a reasonable amount of the logic in the current sheets controller, and make this logic + walking considerably more self-contained.
+
+public record RESTBuilderContext : SchemaWalkerContext {
+	public IRowReader RowReader { get; init; }
+
+	public RESTBuilderContext(IRowReader rowReader) : base() {
+		this.RowReader = rowReader;
+	}
+}
+
 // TODO: Not convinced by this name at all
-public class RESTBuilder : SchemaWalker<SchemaWalkerContext, object> {
-	// TODO: if we put this in DI, this'll need to be context i guess? or built on demand? probably the latter?
-	private readonly IRowReader rowReader;
-
-	public RESTBuilder(
-		IRowReader rowReader
-	) {
-		this.rowReader = rowReader;
+// TODO: Consider an interface if this becomes non-trivial i guess
+public class RESTBuilder : SchemaWalker<RESTBuilderContext, object> {
+	public object Read(SchemaNode node, IRowReader rowReader) {
+		return this.Visit(node, new RESTBuilderContext(rowReader));
 	}
 
-	public object Visit(SchemaNode node) {
-		return this.Visit(node, new SchemaWalkerContext());
-	}
-
-	public override object VisitSheets(SheetsNode node, SchemaWalkerContext context) {
+	public override object VisitSheets(SheetsNode node, RESTBuilderContext context) {
 		throw new NotImplementedException();
 	}
 
-	public override object VisitStruct(StructNode node, SchemaWalkerContext context) {
+	public override object VisitStruct(StructNode node, RESTBuilderContext context) {
 		return this.WalkStruct(node, context);
 	}
 
-	public override object VisitArray(ArrayNode node, SchemaWalkerContext context) {
+	public override object VisitArray(ArrayNode node, RESTBuilderContext context) {
 		var elementWidth = node.Type.Size;
 
 		var value = new List<object>();
@@ -39,7 +41,7 @@ public class RESTBuilder : SchemaWalker<SchemaWalkerContext, object> {
 		return value;
 	}
 
-	public override object VisitScalar(ScalarNode node, SchemaWalkerContext context) {
-		return this.rowReader.ReadColumn(context.Offset);
+	public override object VisitScalar(ScalarNode node, RESTBuilderContext context) {
+		return context.RowReader.ReadColumn(context.Offset);
 	}
 }

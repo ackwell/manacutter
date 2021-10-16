@@ -11,13 +11,16 @@ namespace Manacutter.Controllers;
 public class SheetsController : ControllerBase {
 	private readonly IReader reader;
 	private readonly IDefinitions definitions;
+	private readonly RESTBuilder restBuilder;
 
 	public SheetsController(
 		IReader reader,
-		IDefinitions definitions
+		IDefinitions definitions,
+		RESTBuilder restBuilder
 	) {
 		this.reader = reader;
 		this.definitions = definitions;
+		this.restBuilder = restBuilder;
 	}
 
 	[HttpGet]
@@ -59,11 +62,7 @@ public class SheetsController : ControllerBase {
 			return this.Problem($"Could not resolve definition for sheet \"{sheet}\".");
 		}
 
-		// TODO: This might need to be lifted to DI &c. Will depend on how we handle the row arg
-		//       I think we'll need to keep the top sheet/row lookup, as that's _user input validation_. But for the actual _reading_... we're gonna need to pass a reader in wholesale? or... i guess we can DI the reader in. Hm.
-		var builder = new RESTBuilder(row);
-
 		// TODO: expose row/subrow ids
-		return this.Ok(builder.Visit(rootNode));
+		return this.Ok(this.restBuilder.Read(rootNode, row));
 	}
 }
