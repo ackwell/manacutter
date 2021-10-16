@@ -84,6 +84,7 @@ public class RESTBuilder : SchemaWalker<RESTBuilderContext, object> {
 				throw new NotImplementedException();
 			}
 
+			// Fetch the reader and definition for the sheet.
 			var sheetReader = this.reader.GetSheet(target.Target);
 			if (sheetReader is null) { continue; }
 
@@ -95,14 +96,14 @@ public class RESTBuilder : SchemaWalker<RESTBuilderContext, object> {
 				throw new NotImplementedException();
 			}
 
-			Console.WriteLine($"resolving {context.Offset} to {target.Target}");
 			var rowReader = sheetReader.GetRow((uint)targetRowId);
 
-			// TODO: What does it mean if the ID isn't there? I'm thiking a "connection" struct would be nice - do we keep that and just null the value?
-			//       Then again, this might play into the multiref bullshit - might need to continue here and handle the null at the end
+			// If there's no reader, the sheet doesn't contain this row. Pass on to the next sheet, if any, in the target list.
 			if (rowReader is null) {
-				throw new NotImplementedException();
+				continue;
 			}
+
+			Console.WriteLine($"resolving {context.Offset} to {target.Target}");
 
 			// TODO: should this be .read or .visit? .visit will need to be careful with it's with{} or need a new()
 			return this.Visit(sheetDefinition, context with {

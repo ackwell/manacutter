@@ -120,9 +120,15 @@ internal static class DefinitionReader {
 
 	/// <seealso href="https://github.com/xivapi/SaintCoinach/blob/800eab3e9dd4a2abc625f53ce84dad24c8579920/SaintCoinach/Ex/Relational/ValueConverters/MultiReferenceConverter.cs#L50">MultiReferenceConverter.cs#L50</seealso>
 	private static SchemaNode ReadMultiReferenceConverter(in JsonElement element) {
-		// TODO: Reference node
-		// element["targets"] = array of target sheet names
-		return new ScalarNode();
+		var targets = element.GetProperty("targets").EnumerateArray()
+			.Select(target => target.GetString())
+			.Where(target => target is not null)
+			.Select(target => new ReferenceTarget(target!))
+			.ToList();
+
+		return new ReferenceNode() {
+			Targets = targets,
+		};
 	}
 
 	/// <seealso href="https://github.com/xivapi/SaintCoinach/blob/800eab3e9dd4a2abc625f53ce84dad24c8579920/SaintCoinach/Ex/Relational/ValueConverters/SheetLinkConverter.cs#L40">SheetLinkConverter.cs#L40</seealso>
