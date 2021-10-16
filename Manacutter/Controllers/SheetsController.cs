@@ -1,6 +1,7 @@
 ﻿using Manacutter.Common.Schema;
 using Manacutter.Definitions;
 using Manacutter.Readers;
+using Manacutter.Services.REST;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manacutter.Controllers;
@@ -58,7 +59,11 @@ public class SheetsController : ControllerBase {
 			return this.Problem($"Could not resolve definition for sheet \"{sheet}\".");
 		}
 
+		// TODO: This might need to be lifted to DI &c. Will depend on how we handle the row arg
+		//       I think we'll need to keep the top sheet/row lookup, as that's _user input validation_. But for the actual _reading_... we're gonna need to pass a reader in wholesale? or... i guess we can DI the reader in. Hm.
+		var builder = new RESTBuilder(row);
+
 		// TODO: expose row/subrow ids
-		return this.Ok(row.Read(rootNode, 0));
+		return this.Ok(builder.Visit(rootNode));
 	}
 }

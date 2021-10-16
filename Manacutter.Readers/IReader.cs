@@ -28,5 +28,6 @@ public interface IRowReader {
 	public uint SubRowID { get; }
 
 	// TODO: Should we have an explicit output type?
+	//       I'm leaning towards yes, this is going to be messy with references.
 	public object Read(SchemaNode node, uint offset);
 }

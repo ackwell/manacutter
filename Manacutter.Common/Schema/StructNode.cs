@@ -2,6 +2,7 @@
 
 /// <summary> Representation of a group of named nodes.</summary>
 public record StructNode : SchemaNode {
+	// TODO: Arguably it'd be "cleaner" to completely remove offsets from the canonical tree, and have definitions add padding columns themselves?
 	/// <summary>Mapping of names to their associated node trees.</summary>
 	public IReadOnlyDictionary<string, (uint Offset, SchemaNode Node)> Fields { get; init; }
 
