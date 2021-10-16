@@ -214,7 +214,7 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 			ResolvedType = graphType,
 			Resolver = new FuncFieldResolver<object>(context => {
 				var execContext = (ExecutionContext)context.Source!;
-				return execContext.Row?.Read(node, execContext.Offset);
+				return execContext.Row?.ReadColumn(execContext.Offset);
 			}),
 		};
 	}

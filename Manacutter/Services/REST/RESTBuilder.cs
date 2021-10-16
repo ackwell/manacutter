@@ -40,6 +40,6 @@ public class RESTBuilder : SchemaWalker<SchemaWalkerContext, object> {
 	}
 
 	public override object VisitScalar(ScalarNode node, SchemaWalkerContext context) {
-		return this.rowReader.Read(node, context.Offset);
+		return this.rowReader.ReadColumn(context.Offset);
 	}
 }

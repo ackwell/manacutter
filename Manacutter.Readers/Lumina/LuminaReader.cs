@@ -67,7 +67,7 @@ internal class LuminaSheetReader : ISheetReader {
 			return null;
 		}
 
-		return new LuminaNodeWalker(rowParser);
+		return new LuminaRowReader(rowParser);
 	}
 
 	public IEnumerable<IRowReader> EnumerateRows(uint? startRowId, uint? startSubRowId) {
