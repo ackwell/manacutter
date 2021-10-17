@@ -155,6 +155,28 @@ internal static class DefinitionReader {
 	/// <seealso href="https://github.com/xivapi/SaintCoinach/blob/800eab3e9dd4a2abc625f53ce84dad24c8579920/SaintCoinach/Ex/Relational/ValueConverters/ComplexLinkConverter.cs#L143">ComplexLinkConverter.cs#L143</seealso>
 	private static SchemaNode ReadComplexLinkConverter(in JsonElement element) {
 		// TODO: Reference node.
+		/*
+		 * jesus fucking christ okay let's follow this hell hole of fucking logic thanks stc you piece of shit
+		 * - read key as int32
+		 * - iterate over links (link = iter element["links"])
+		 *   - check when clause (link["when"]), if it doesn't match continue to next link
+		 *   - fetch row (link["sheet"] or link["sheets"])
+		 *     - can basically consider single sheet to be same as a one item array, it's not doing much special there
+		 *     - run found sheet through the "row producer" (link["key"])
+		 *		   - if no key specified, fetch row by ID
+		 *		   - if key specified, fetch row by searching for row with column=keyname with matching value
+		 *		   - if none of the above exist, continue to next link
+		 *   - project the result (link["project"])
+		 *     - if no projection specified, return row as-is
+		 *     - if projection specified, return value of field in specified row
+		 *     
+		 * so what do we actually need from that?
+		 * - we need the when conditional, as that plays into the main link loop
+		 * - i think we need the key, too - in the weeklybingorewarddata->tomestonesitem link, it needs to link on non-key row for the relation to work
+		 *   - i've only seen two of these, though, it's certainly not common. Possibly just... leave it?
+		 * - projection seems pretty UI-focused, and is primarily being used to actually skip over a potentially meaningful table. i'd err to ignoring it.
+		 */
+
 		return new ScalarNode();
 	}
 }
