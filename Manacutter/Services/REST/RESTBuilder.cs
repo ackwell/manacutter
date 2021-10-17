@@ -61,16 +61,12 @@ public class RESTBuilder : SchemaWalker<RESTBuilderContext, object> {
 		// TODO: Sanity check the column type - is there a single type that's _always_ used for reference IDs?
 		//       Sounds like it's any numeric type, so check against bool,string,etc.
 		// Int as they occasionally use -1 for "no link"
-		var temp = context.RowReader.ReadColumn(context.Offset);
-
-		var targetRowId = Convert.ToInt32(temp);
+		var targetRowId = Convert.ToInt32(context.RowReader.ReadColumn(context.Offset));
 
 		// TODO: what do we do for this case?
 		if (targetRowId < 0) {
 			return targetRowId;
 		}
-
-		// Console.WriteLine(string.Join(',', node.Targets.Select(target => target.Target)));
 
 		// TODO: this should probably be the same logic as a no-targets-match result or something?
 		// TODO: Configurable
@@ -91,9 +87,22 @@ public class RESTBuilder : SchemaWalker<RESTBuilderContext, object> {
 			// TODO: error check/trygetvalue?
 			var sheetDefinition = context.Schema.Sheets[target.Target];
 
-			// TODO: handle subrows - probably want to enumeraterows.takewhile or something
+			// If the sheet has subrows, we need to enumerate over the subrows on the requested row
 			if (sheetReader.HasSubrows) {
-				throw new NotImplementedException();
+				var subRowReaders = sheetReader.EnumerateRows((uint)targetRowId, null)
+					.TakeWhile(reader => reader.RowID == targetRowId)
+					.Select(reader => this.Visit(sheetDefinition, context with {
+						Offset = 0,
+						RowReader = reader,
+						ReferenceDepth = context.ReferenceDepth + 1
+					}));
+
+				// A matching subrow will always have at least a /0 entry - ergo, a count of 0 means that there's no match at all.
+				if (subRowReaders.Count() == 0) {
+					continue;
+				}
+
+				return subRowReaders;
 			}
 
 			var rowReader = sheetReader.GetRow((uint)targetRowId);
@@ -103,9 +112,8 @@ public class RESTBuilder : SchemaWalker<RESTBuilderContext, object> {
 				continue;
 			}
 
-			Console.WriteLine($"resolving {context.Offset} to {target.Target}");
-
 			// TODO: should this be .read or .visit? .visit will need to be careful with it's with{} or need a new()
+			// TODO: There's now two iterations on this - abstract?
 			return this.Visit(sheetDefinition, context with {
 				Offset = 0,
 				RowReader = rowReader,
