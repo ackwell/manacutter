@@ -20,11 +20,29 @@ internal class Backfill : TransformerWalker<BackfillContext> {
 	}
 
 	public override SchemaNode VisitSheets(SheetsNode node, BackfillContext context) {
-		return base.VisitSheets(node, context with {
+		// Walk all the known sheets from the definition
+		var sheetsNode = (SheetsNode)base.VisitSheets(node, context with {
 			IsSheetRoot = true,
 		}, (context, name, _) => context with {
 			Sheet = this.reader.GetSheet(name),
 		});
+
+		// Check for any sheets that we don't have a definition for, and build a backfill
+		// TODO: This is also picking up all the custom/, quest/, shop/, etc EXDs. Need to consider how we want to handle those.
+		var missingSheetNames = this.reader.GetSheetNames()
+			.Where(sheetName => !sheetsNode.Sheets.ContainsKey(sheetName));
+
+		var sheets = new Dictionary<string, SchemaNode>(sheetsNode.Sheets);
+		foreach (var sheetName in missingSheetNames) {
+			var structNode = new StructNode(new Dictionary<string, (uint, SchemaNode)>());
+			var fsd = this.VisitStruct(structNode, context with {
+				IsSheetRoot = true,
+				Sheet = this.reader.GetSheet(sheetName),
+			});
+			sheets.Add(sheetName, fsd);
+		}
+
+		return sheetsNode with { Sheets = sheets };
 	}
 
 	public override SchemaNode VisitStruct(StructNode node, BackfillContext context) {
