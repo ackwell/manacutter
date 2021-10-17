@@ -53,9 +53,11 @@ public class DefinitionWalkerTests {
 		var referenceNode = new ReferenceNode() {
 			Targets = new List<ReferenceTarget>() {
 				new ReferenceTarget("Target1"),
-				new ConditionalReferenceTarget("Target2") {
-					FieldOffset = -1,
-					Value = 1
+				new ReferenceTarget("Target2") {
+					Condition = new ReferenceTargetCondition() {
+						FieldOffset = -1,
+						Value = 1
+					}
 				},
 			},
 		};
@@ -115,7 +117,7 @@ public class DefinitionWalkerTests {
 						{ "3", (0, new ScalarNode()) }
 					}),
 					5
-				) },
+				)) },
 				{ "4", (6, new ReferenceNode() {
 					Targets = new List<ReferenceTarget>() { new ReferenceTarget("Target") },
 				}) },

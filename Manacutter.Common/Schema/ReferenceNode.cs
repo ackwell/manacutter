@@ -23,18 +23,22 @@ public record ReferenceTarget {
 	/// <summary>Target sheet's string identifier.</summary>
 	public string Target { get; init; }
 
+	/// <summary>
+	/// Condition for this reference target. If non-null, the condition must be
+	/// matched for this target to be considered active.
+	/// </summary>
+	public ReferenceTargetCondition? Condition { get; init; }
+
 	public ReferenceTarget(string target) {
 		this.Target = target;
 	}
 }
 
-/// <summary>Potential target of a reference node, active only when a local field has a specific value.</summary>
-public record ConditionalReferenceTarget : ReferenceTarget {
+/// <summary>Condition that must be matched for a reference target to be considered active.</summary>
+public record ReferenceTargetCondition {
 	/// <summary>Column offset, relative to parent reference node, of the column to check the value of.</summary>
 	public int FieldOffset { get; init; }
 
 	/// <summary>Value that checked column's value must match for this reference target to be considered active.</summary>
 	public object? Value { get; init; } = null;
-
-	public ConditionalReferenceTarget(string target) : base(target) { }
 }

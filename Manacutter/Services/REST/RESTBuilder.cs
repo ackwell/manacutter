@@ -76,7 +76,7 @@ public class RESTBuilder : SchemaWalker<RESTBuilderContext, object> {
 
 		foreach (var target in node.Targets) {
 			// TODO: conditional link checks here
-			if (target is ConditionalReferenceTarget) {
+			if (target.Condition is not null) {
 				throw new NotImplementedException();
 			}
 
@@ -98,7 +98,7 @@ public class RESTBuilder : SchemaWalker<RESTBuilderContext, object> {
 					}));
 
 				// A matching subrow will always have at least a /0 entry - ergo, a count of 0 means that there's no match at all.
-				if (subRowReaders.Count() == 0) {
+				if (!subRowReaders.Any()) {
 					continue;
 				}
 
