@@ -23,11 +23,12 @@ public record ReferenceTarget(string Sheet) {
 	/// <summary>Target sheet's string identifier.</summary>
 	public string Sheet { get; init; } = Sheet;
 
+	// TODO: This should probably use a standardised "selector" format.
 	/// <summary>
 	/// Name of the column in the target sheet whose value the parent reference node
 	/// will contain the value of. If null, the value will reference the sheet's row ID.
 	/// </summary>
-	public string? Column { get; init; }
+	public string? Field { get; init; }
 
 	/// <summary>
 	/// Condition for this reference target. If non-null, the condition must be
@@ -37,10 +38,11 @@ public record ReferenceTarget(string Sheet) {
 }
 
 /// <summary>Condition that must be matched for a reference target to be considered active.</summary>
-public record ReferenceCondition(string Field, object Value) {
+public record ReferenceCondition(string Field, uint Value) {
 	/// <summary>Name of the column to check the value of.</summary>
 	public string Field { get; init; } = Field;
 
+	// TODO: Technically they're only really going to use this for enums, so a uint is fine, but i don't like the restriction. long term look into resolution.
 	/// <summary>Value that checked column's value must match for this reference target to be considered active.</summary>
-	public object Value { get; init; } = Value;
+	public uint Value { get; init; } = Value;
 }

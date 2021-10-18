@@ -100,18 +100,16 @@ internal class SaintCoinachProvider : IDefinitionProvider, IDisposable {
 			.Where(tree => tree.Name.EndsWith(".json"))
 			.ToDictionary(
 				tree => tree.Name.Substring(0, tree.Name.Length - 5),
-				tree => {
-					// TODO: this needs to be cleaned up a bit.
-					var contentStream = tree
-						.Target
-						.Peel<Git.Blob>()
-						.GetContentStream();
-
-					using var document = JsonDocument.Parse(contentStream);
-					return DefinitionReader.ReadSheetDefinition(document.RootElement);
-				}
+				tree => this.BlobToSchema(tree.Target.Peel<Git.Blob>())
 			);
 
 		return new SheetsNode(sheets);
+	}
+
+	private SchemaNode BlobToSchema(Git.Blob blob) {
+		var contentStream = blob.GetContentStream();
+
+		using var document = JsonDocument.Parse(contentStream);
+		return DefinitionReader.ReadSheetDefinition(document.RootElement);
 	}
 }

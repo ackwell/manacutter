@@ -154,7 +154,6 @@ internal static class DefinitionReader {
 
 	/// <seealso href="https://github.com/xivapi/SaintCoinach/blob/800eab3e9dd4a2abc625f53ce84dad24c8579920/SaintCoinach/Ex/Relational/ValueConverters/ComplexLinkConverter.cs#L143">ComplexLinkConverter.cs#L143</seealso>
 	private static SchemaNode ReadComplexLinkConverter(in JsonElement element) {
-		// TODO: Reference node.
 		/*
 		 * jesus fucking christ okay let's follow this hell hole of fucking logic thanks stc you piece of shit
 		 * - read key as int32
@@ -177,6 +176,62 @@ internal static class DefinitionReader {
 		 * - projection seems pretty UI-focused, and is primarily being used to actually skip over a potentially meaningful table. i'd err to ignoring it.
 		 */
 
-		return new ScalarNode();
+		// Build a list of targets from the complexlink's links
+		var targets = new List<ReferenceTarget>();
+		foreach (var link in element.GetProperty("links").EnumerateArray()) {
+			// Check if there's a when clause, transforming it into a condition if any is found.
+			var condition = link.TryGetProperty("when", out var when)
+				? ReadWhenClause(when)
+				: null;
+
+			// Get the target sheet column, if any.
+			var key = link.TryGetProperty("key", out var keyProperty)
+				? keyProperty.GetString()
+				: null;
+
+			// If there's a key for a singular sheet, add it.
+			var sheet = link.TryGetProperty("sheet", out var sheetProperty)
+				? sheetProperty.GetString()
+				: null;
+			if (sheet is not null) {
+				targets.Add(new ReferenceTarget(sheet) {
+					Condition = condition,
+					Field = key,
+				});
+			}
+
+			// Check if there's a sheets key, and skip out if not.
+			var hasSheets = link.TryGetProperty("sheets", out var sheetsProperty);
+			if (!hasSheets) {
+				continue;
+			}
+
+			// Enumerate over the declared sheets, mapping to a reference target for each.
+			var newTargets = sheetsProperty.EnumerateArray()
+				.Select(sheet => sheet.GetString())
+				.Where(sheet => sheet is not null) 
+				.Select(sheet => new ReferenceTarget(sheet!) {
+					Condition = condition,
+					Field = key,
+				});
+
+			targets.AddRange(newTargets);
+		}
+
+		return new ReferenceNode() {
+			Targets = targets,
+		};
+	}
+
+	private static ReferenceCondition ReadWhenClause(in JsonElement element) {
+		var key = element.GetProperty("key").GetString();
+		if (key is null) {
+			throw new ArgumentNullException("key");
+		}
+
+		// Coinach schema only seems to reference uints here. Keep an eye on this.
+		var value = element.GetProperty("value").GetUInt32();
+
+		return new ReferenceCondition(key, value);
 	}
 }
