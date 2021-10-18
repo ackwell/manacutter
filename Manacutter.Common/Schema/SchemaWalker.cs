@@ -14,6 +14,15 @@ public record SchemaWalkerContext {
 
 	/// <summary>Schema node associated with this walker context.</summary>
 	public SchemaNode? Node { get; init; }
+
+	public IEnumerable<SchemaWalkerContext> EnumerateAncestors() {
+		var context = this;
+
+		while (context is not null) {
+			yield return context;
+			context = context.Parent;
+		}
+	}
 }
 
 public abstract class SchemaWalker<TContext, TReturn>

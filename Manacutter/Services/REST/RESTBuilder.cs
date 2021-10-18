@@ -75,9 +75,29 @@ public class RESTBuilder : SchemaWalker<RESTBuilderContext, object> {
 		}
 
 		foreach (var target in node.Targets) {
-			// TODO: conditional link checks here
+			// If there's a condition on the target, check it
 			if (target.Condition is not null) {
-				throw new NotImplementedException();
+				var condition = target.Condition;
+
+				// Find the closest parent with a matching field, and calculate the field's column offset
+				var column = context.EnumerateAncestors()
+					.Where(context => context.Node is StructNode node && node.Fields.ContainsKey(condition.Field))
+					.Select(context => {
+						var structNode = (StructNode)context.Node!;
+						return context.Offset + structNode.Fields[condition.Field].Offset;
+					})
+					.FirstOrDefault(uint.MaxValue);
+
+				if (column == uint.MaxValue) {
+					// TODO: This... shouldn't happen. Should probably log a debug or soemthing.
+					continue;
+				}
+
+				// Read in the value as a uint and check - if it doesn't match, this target is inactive
+				var value = Convert.ToUInt32(context.RowReader.ReadColumn(column));
+				if (value != condition.Value) {
+					continue;
+				}
 			}
 
 			// Fetch the reader and definition for the sheet.
@@ -86,6 +106,11 @@ public class RESTBuilder : SchemaWalker<RESTBuilderContext, object> {
 
 			// TODO: error check/trygetvalue?
 			var sheetDefinition = context.Schema.Sheets[target.Sheet];
+
+			// TODO: non-id lookups. they'll probably conflict with subrow logic in some way
+			if (target.Field is not null) {
+				throw new NotImplementedException();
+			}
 
 			// If the sheet has subrows, we need to enumerate over the subrows on the requested row
 			if (sheetReader.HasSubrows) {
