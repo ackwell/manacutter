@@ -74,27 +74,22 @@ public class RESTBuilder : SchemaWalker<RESTBuilderContext, object> {
 			return targetRowId;
 		}
 
+		// It's common for multiple targer conditions to check the same field - cache
+		// values by field name to avoid re-reading
+		var conditionFieldCache = new Dictionary<string, uint>();
+
 		foreach (var target in node.Targets) {
 			// If there's a condition on the target, check it
 			if (target.Condition is not null) {
 				var condition = target.Condition;
 
-				// Find the closest parent with a matching field, and calculate the field's column offset
-				var column = context.EnumerateAncestors()
-					.Where(context => context.Node is StructNode node && node.Fields.ContainsKey(condition.Field))
-					.Select(context => {
-						var structNode = (StructNode)context.Node!;
-						return context.Offset + structNode.Fields[condition.Field].Offset;
-					})
-					.FirstOrDefault(uint.MaxValue);
-
-				if (column == uint.MaxValue) {
-					// TODO: This... shouldn't happen. Should probably log a debug or soemthing.
-					continue;
+				// Try to get the value from cache.
+				if (!conditionFieldCache.TryGetValue(condition.Field, out var value)) {
+					value = Convert.ToUInt32(this.GetFieldValue(context, condition.Field));
+					conditionFieldCache[condition.Field] = value;
 				}
 
-				// Read in the value as a uint and check - if it doesn't match, this target is inactive
-				var value = Convert.ToUInt32(context.RowReader.ReadColumn(column));
+				// If it doesn't match, this target is inactive.
 				if (value != condition.Value) {
 					continue;
 				}
@@ -104,8 +99,9 @@ public class RESTBuilder : SchemaWalker<RESTBuilderContext, object> {
 			var sheetReader = this.reader.GetSheet(target.Sheet);
 			if (sheetReader is null) { continue; }
 
-			// TODO: error check/trygetvalue?
-			var sheetDefinition = context.Schema.Sheets[target.Sheet];
+			if (!context.Schema.Sheets.TryGetValue(target.Sheet, out var sheetDefinition)) {
+				continue;
+			}
 
 			// TODO: non-id lookups. they'll probably conflict with subrow logic in some way
 			if (target.Field is not null) {
@@ -137,7 +133,6 @@ public class RESTBuilder : SchemaWalker<RESTBuilderContext, object> {
 				continue;
 			}
 
-			// TODO: should this be .read or .visit? .visit will need to be careful with it's with{} or need a new()
 			// TODO: There's now two iterations on this - abstract?
 			return this.Visit(sheetDefinition, context with {
 				Offset = 0,
@@ -151,5 +146,24 @@ public class RESTBuilder : SchemaWalker<RESTBuilderContext, object> {
 
 	public override object VisitScalar(ScalarNode node, RESTBuilderContext context) {
 		return context.RowReader.ReadColumn(context.Offset);
+	}
+
+	private object? GetFieldValue(RESTBuilderContext context, string field) {
+		// Find the closest parent with a matching field, and calculate the field's column offset
+		var column = context.EnumerateAncestors()
+			.Where(context => context.Node is StructNode node && node.Fields.ContainsKey(field))
+			.Select(context => {
+				var structNode = (StructNode)context.Node!;
+				return context.Offset + structNode.Fields[field].Offset;
+			})
+			.FirstOrDefault(uint.MaxValue);
+
+		if (column == uint.MaxValue) {
+			// TODO: This... shouldn't happen. Should probably log a debug or soemthing.
+			return null;
+		}
+
+		// Read in the value & return
+		return context.RowReader.ReadColumn(column);
 	}
 }
