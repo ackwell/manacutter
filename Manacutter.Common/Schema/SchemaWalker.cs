@@ -4,6 +4,16 @@
 public record SchemaWalkerContext {
 	/// <summary>Current column offset.</summary>
 	public uint Offset { get; init; }
+
+	// TODO: context with { Parent = context } is a very common pattern in this file. if other files need to do it, it's a sign we should probably make a .With that does it for us in some manner
+	/// <summary>
+	/// Walker context of the parent node. If null, this context forms the root of
+	/// a walker execution.
+	/// </summary>
+	public SchemaWalkerContext? Parent { get; init; }
+
+	/// <summary>Schema node associated with this walker context.</summary>
+	public SchemaNode? Node { get; init; }
 }
 
 public abstract class SchemaWalker<TContext, TReturn>
@@ -11,7 +21,7 @@ public abstract class SchemaWalker<TContext, TReturn>
 	where TContext : SchemaWalkerContext {
 
 	public TReturn Visit(SchemaNode node, TContext context) {
-		return node.Accept(this, context);
+		return node.Accept(this, context with { Node = node });
 	}
 
 	public abstract TReturn VisitSheets(SheetsNode node, TContext context);
@@ -29,7 +39,7 @@ public abstract class SchemaWalker<TContext, TReturn>
 		return node.Sheets.ToDictionary(
 			pair => pair.Key,
 			pair => {
-				var newContext = context;
+				var newContext = context with { Parent = context };
 				if (contextTransform is not null) {
 					newContext = contextTransform(newContext, pair.Key, pair.Value);
 				}
@@ -57,7 +67,8 @@ public abstract class SchemaWalker<TContext, TReturn>
 				var (offset, node) = pair.Value;
 
 				var newContext = context with {
-					Offset = context.Offset + offset
+					Offset = context.Offset + offset,
+					Parent = context,
 				};
 				if (contextTransform is not null) {
 					newContext = contextTransform(newContext, pair.Key, node);
@@ -74,9 +85,7 @@ public abstract class SchemaWalker<TContext, TReturn>
 	/// <param name="context">Visiting context.</param>
 	/// <returns>Visitor result.</returns>
 	protected TReturn WalkArray(ArrayNode node, TContext context) {
-		return this.Visit(node.Type, context with {
-			Offset = context.Offset
-		});
+		return this.Visit(node.Type, context with { Parent = context });
 	}
 
 	public abstract TReturn VisitReference(ReferenceNode node, TContext context);
