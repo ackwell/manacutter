@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Manacutter.Tests.Definitions;
 
-internal class DefinitionWalkerStub : SchemaWalker<SchemaWalkerContext, string> {
+internal class SchemaWalkerStub : SchemaWalker<SchemaWalkerContext, string> {
 	public override string VisitSheets(SheetsNode node, SchemaWalkerContext context) {
 		var sheets = this.WalkSheets(node, context)
 			.Select(pair => $"{pair.Key}:{pair.Value}");
@@ -23,7 +23,7 @@ internal class DefinitionWalkerStub : SchemaWalker<SchemaWalkerContext, string> 
 	}
 
 	public override string VisitReference(ReferenceNode node, SchemaWalkerContext context) {
-		return $"ref|{string.Join(',', node.Targets.Select(target => target.Target))}";
+		return $"ref|{string.Join(',', node.Targets.Select(target => target.Sheet))}";
 	}
 
 	public override string VisitScalar(ScalarNode node, SchemaWalkerContext context) {
@@ -31,11 +31,11 @@ internal class DefinitionWalkerStub : SchemaWalker<SchemaWalkerContext, string> 
 	}
 }
 
-public class DefinitionWalkerTests {
-	private DefinitionWalkerStub walker;
+public class SchemaWalkerTests {
+	private SchemaWalkerStub walker;
 
-	public DefinitionWalkerTests() {
-		walker = new DefinitionWalkerStub();
+	public SchemaWalkerTests() {
+		walker = new SchemaWalkerStub();
 	}
 
 	[Fact]
@@ -54,10 +54,7 @@ public class DefinitionWalkerTests {
 			Targets = new List<ReferenceTarget>() {
 				new ReferenceTarget("Target1"),
 				new ReferenceTarget("Target2") {
-					Condition = new ReferenceTargetCondition() {
-						FieldOffset = -1,
-						Value = 1
-					}
+					Condition = new ReferenceCondition("FieldName", 1)
 				},
 			},
 		};

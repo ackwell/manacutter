@@ -81,11 +81,11 @@ public class RESTBuilder : SchemaWalker<RESTBuilderContext, object> {
 			}
 
 			// Fetch the reader and definition for the sheet.
-			var sheetReader = this.reader.GetSheet(target.Target);
+			var sheetReader = this.reader.GetSheet(target.Sheet);
 			if (sheetReader is null) { continue; }
 
 			// TODO: error check/trygetvalue?
-			var sheetDefinition = context.Schema.Sheets[target.Target];
+			var sheetDefinition = context.Schema.Sheets[target.Sheet];
 
 			// If the sheet has subrows, we need to enumerate over the subrows on the requested row
 			if (sheetReader.HasSubrows) {
