@@ -57,29 +57,27 @@ public class RESTBuilder : SchemaWalker<RESTBuilderContext, object> {
 	}
 
 	public override object VisitReference(ReferenceNode node, RESTBuilderContext context) {
-		// TODO: We should probably maintain a list of visited rows (maybe even non-scoped?) to prevent infinite recursion
-		// TODO: Sanity check the column type - is there a single type that's _always_ used for reference IDs?
-		//       Sounds like it's any numeric type, so check against bool,string,etc.
-		// Int as they occasionally use -1 for "no link"
+		// TODO: Sanity check the column type - can be any of the numeric types.
+		// Using int as they occasionally use -1 for "no link".
 		var targetRowId = Convert.ToInt32(context.RowReader.ReadColumn(context.Offset));
 
-		// TODO: what do we do for this case?
-		if (targetRowId < 0) {
-			return targetRowId;
+		var result = new ReferenceResult(targetRowId);
+
+		// A target < 0 is used to signify that no link is active for this row.  We're
+		// also limiting the recursion depth to prevent pulling in the entire game in
+		// one request, hah.
+		// TODO: Configurable reference depth limit
+		if (targetRowId < 0 || context.ReferenceDepth >= 1) {
+			return result;
 		}
 
-		// TODO: this should probably be the same logic as a no-targets-match result or something?
-		// TODO: Configurable
-		if (context.ReferenceDepth >= 1) {
-			return targetRowId;
-		}
-
-		// It's common for multiple targer conditions to check the same field - cache
+		// It's common for multiple target conditions to check the same field - cache
 		// values by field name to avoid re-reading
 		var conditionFieldCache = new Dictionary<string, uint>();
 
+		// Check each of the reference's configured targets.
 		foreach (var target in node.Targets) {
-			// If there's a condition on the target, check it
+			// If there's a condition on the target, check it.
 			if (target.Condition is not null) {
 				var condition = target.Condition;
 
@@ -96,6 +94,8 @@ public class RESTBuilder : SchemaWalker<RESTBuilderContext, object> {
 			}
 
 			// Fetch the reader and definition for the sheet.
+			result.Sheet = target.Sheet;
+
 			var sheetReader = this.reader.GetSheet(target.Sheet);
 			if (sheetReader is null) { continue; }
 
@@ -105,12 +105,13 @@ public class RESTBuilder : SchemaWalker<RESTBuilderContext, object> {
 
 			// TODO: non-id lookups. they'll probably conflict with subrow logic in some way
 			if (target.Field is not null) {
+				result.Key = target.Field;
 				throw new NotImplementedException();
 			}
 
 			// If the sheet has subrows, we need to enumerate over the subrows on the requested row
 			if (sheetReader.HasSubrows) {
-				var subRowReaders = sheetReader.EnumerateRows((uint)targetRowId, null)
+				var subRows = sheetReader.EnumerateRows((uint)targetRowId, null)
 					.TakeWhile(reader => reader.RowID == targetRowId)
 					.Select(reader => this.Visit(sheetDefinition, context with {
 						Offset = 0,
@@ -119,11 +120,13 @@ public class RESTBuilder : SchemaWalker<RESTBuilderContext, object> {
 					}));
 
 				// A matching subrow will always have at least a /0 entry - ergo, a count of 0 means that there's no match at all.
-				if (!subRowReaders.Any()) {
+				if (!subRows.Any()) {
 					continue;
 				}
 
-				return subRowReaders;
+				result.Data = subRows;
+
+				break;
 			}
 
 			var rowReader = sheetReader.GetRow((uint)targetRowId);
@@ -134,14 +137,16 @@ public class RESTBuilder : SchemaWalker<RESTBuilderContext, object> {
 			}
 
 			// TODO: There's now two iterations on this - abstract?
-			return this.Visit(sheetDefinition, context with {
+			result.Data = this.Visit(sheetDefinition, context with {
 				Offset = 0,
 				RowReader = rowReader,
 				ReferenceDepth = context.ReferenceDepth + 1
 			});
+
+			break;
 		}
 
-		return targetRowId;
+		return result;
 	}
 
 	public override object VisitScalar(ScalarNode node, RESTBuilderContext context) {
@@ -166,4 +171,11 @@ public class RESTBuilder : SchemaWalker<RESTBuilderContext, object> {
 		// Read in the value & return
 		return context.RowReader.ReadColumn(column);
 	}
+}
+
+public record ReferenceResult(int Value) {
+	public string? Sheet { get; set; }
+	public string? Key { get; set; }
+	public int Value { get; init; } = Value;
+	public object? Data { get; set; }
 }
