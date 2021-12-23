@@ -15,6 +15,8 @@ namespace Microsoft.Extensions.DependencyInjection {
 			// TODO: Probably worth setting up automatic inclusion for these, maybe the providers too
 			services.AddSingleton<ITransformer, CollapseSimple>();
 			services.AddSingleton<ITransformer, Backfill>();
+			// NOTE: This needs to be run after backfill always.
+			services.AddSingleton<ITransformer, CleanReferences>();
 
 			services.AddSingleton<IDefinitions, DefinitionsService>();
 

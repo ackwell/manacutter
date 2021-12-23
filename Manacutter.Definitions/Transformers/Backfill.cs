@@ -28,9 +28,10 @@ internal class Backfill : TransformerWalker<BackfillContext> {
 		});
 
 		// Check for any sheets that we don't have a definition for, and build a backfill
-		// TODO: This is also picking up all the custom/, quest/, shop/, etc EXDs. Need to consider how we want to handle those.
 		var missingSheetNames = this.reader.GetSheetNames()
-			.Where(sheetName => !sheetsNode.Sheets.ContainsKey(sheetName));
+			.Where(sheetName => !sheetsNode.Sheets.ContainsKey(sheetName))
+			// TODO: This is incredibly naive, and is just a bandaid to remove custom/, quest/, etc sheets. Think up something more long-term reliable.
+			.Where(sheetName => !sheetName.Contains('/'));
 
 		var sheets = new Dictionary<string, SchemaNode>(sheetsNode.Sheets);
 		foreach (var sheetName in missingSheetNames) {

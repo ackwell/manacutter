@@ -137,7 +137,24 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 	}
 
 	public override FieldType VisitReference(ReferenceNode node, FieldBuilderContext context) {
-		throw new NotImplementedException();
+		var union = new UnionGraphType() {
+			Name = $"{string.Join('_', context.Path.Select(part => part.Pascalize()))}_UnionTest",
+		};
+
+		// TODO: need to standardise sheet name -> type name generation for xrefs
+		// TODO: work out how we're handling target sheets with subrows
+
+		foreach (var target in node.Targets) {
+			union.AddPossibleType(new GraphQLTypeReference(SanitizeName(target.Sheet).Pascalize()));
+		}
+
+		return new FieldType() {
+			Name = context.Path.Last(),
+			ResolvedType = union,
+			Resolver = new FuncFieldResolver<object>(context => {
+				return null;
+			}),
+		};
 	}
 
 	public override FieldType VisitStruct(StructNode node, FieldBuilderContext context) {
