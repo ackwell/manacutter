@@ -137,6 +137,8 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 	}
 
 	public override FieldType VisitReference(ReferenceNode node, FieldBuilderContext context) {
+		// TODO: should probably use a direct ref type if ony one target
+		// TODO: This name generation is common, should probably generalise it
 		var union = new UnionGraphType() {
 			Name = $"{string.Join('_', context.Path.Select(part => part.Pascalize()))}_UnionTest",
 		};
@@ -152,7 +154,47 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 			Name = context.Path.Last(),
 			ResolvedType = union,
 			Resolver = new FuncFieldResolver<object>(context => {
-				return null;
+				// TODO: quite a lot of this is going to be shared with RESTBuilder, work out how much can be combined. for now, comments on logic are over there.
+
+				var executionContext = (ExecutionContext)context.Source!;
+				if (executionContext.Row is null) {
+					return null;
+				}
+
+				var targetRowId = Convert.ToInt32(executionContext.Row.ReadColumn(executionContext.Offset));
+
+				// TODO: do we need depth checks, given this is GQL and ergo lazy?
+				// TODO: should this be null?
+				if (targetRowId < 0) {
+					return null;
+				}
+
+				var conditionFieldCache = new Dictionary<string, uint>();
+
+				foreach (var target in node.Targets) {
+					if (target.Condition is not null) {
+						var condition = target.Condition;
+
+						if (!conditionFieldCache.TryGetValue(condition.Field, out var value)) {
+							//value = Convert.ToUInt32()
+							//conditionFieldCache[condition.Field] = value;
+						}
+					}
+				}
+
+				// TODO: this needs conditional handling. also, like, all targets and shit
+
+				var sheetReader = this.reader.GetSheet(node.Targets.First().Sheet);
+				var rowReader = sheetReader?.GetRow((uint)targetRowId);
+				if (rowReader is null) {
+					// TODO
+					return null;
+				}
+
+				return executionContext with {
+					Row = rowReader,
+					Offset = 0,
+				};
 			}),
 		};
 	}
