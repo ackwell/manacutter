@@ -136,54 +136,58 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 		return nodeGraphType;
 	}
 
-	public override FieldType VisitStruct(StructNode node, FieldBuilderContext context) {
+	public override FieldType VisitStruct(StructNode node, FieldBuilderContext walkerContext) {
 		var type = new ObjectGraphType() {
-			Name = string.Join('_', context.Path.Select(part => part.Pascalize())),
+			Name = string.Join('_', walkerContext.Path.Select(part => part.Pascalize())),
 		};
 
-		foreach (var pair in this.WalkStruct(node, context, (context, name, _) => context with {
+		foreach (var pair in this.WalkStruct(node, walkerContext, (context, name, _) => context with {
 			Path = context.Path.Add(SanitizeName(name))
 		})) {
 			type.AddField(pair.Value);
 		}
 
 		return new FieldType() {
-			Name = context.Path.Last(),
+			Name = walkerContext.Path.Last(),
 			ResolvedType = type,
 			Resolver = new FuncFieldResolver<object>(context => {
 				var executionContext = (ExecutionContext)context.Source!;
-				// TODO: this should be using the walker context offset
 				return executionContext with { Offset = executionContext.Offset };
 			})
 		};
 	}
 
-	public override FieldType VisitArray(ArrayNode node, FieldBuilderContext context) {
-		var fieldType = this.WalkArray(node, context);
+	public override FieldType VisitArray(ArrayNode node, FieldBuilderContext walkerContext) {
+		var fieldType = this.WalkArray(node, walkerContext);
 
 		return new FieldType() {
-			Name = context.Path.Last(),
+			Name = walkerContext.Path.Last(),
 			ResolvedType = new ListGraphType(fieldType.ResolvedType),
 			Resolver = new FuncFieldResolver<object>(context => {
 				var executionContext = (ExecutionContext)context.Source!;
 				var baseOffset = executionContext.Offset;
 				var elementWidth = node.Type.Size;
 
-				var execContexts = context.ArrayPool.Rent<ExecutionContext>((int)node.Count);
+				var results = context.ArrayPool.Rent<object?>((int)node.Count);
 				for (int index = 0; index < node.Count; index++) {
 					var elementOffset = index * elementWidth;
-					execContexts[index] = executionContext with {
-						Offset = (uint)(baseOffset + elementOffset),
+
+					var newContext = new ResolveFieldContext<ExecutionContext>(context) {
+						Source = executionContext with {
+							Offset = (uint)(baseOffset + elementOffset)
+						},
 					};
+
+					results[index] = fieldType.Resolver?.Resolve(newContext);
 				}
 
-				return execContexts.Constrained((int)node.Count);
+				return results.Constrained((int)node.Count);
 			}),
 		};
 	}
 
-	public override FieldType VisitScalar(ScalarNode node, FieldBuilderContext context) {
-		var fieldName = context.Path.Last();
+	public override FieldType VisitScalar(ScalarNode node, FieldBuilderContext walkerContext) {
+		var fieldName = walkerContext.Path.Last();
 
 		// If it's an unknown type, we shortcut with an explicit unknown handler
 		if (node.Type == ScalarType.Unknown) {
@@ -213,8 +217,8 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 			Name = fieldName,
 			ResolvedType = graphType,
 			Resolver = new FuncFieldResolver<object>(context => {
-				var execContext = (ExecutionContext)context.Source!;
-				return execContext.Row?.ReadColumn(execContext.Offset);
+				var executionContext = (ExecutionContext)context.Source!;
+				return executionContext.Row?.ReadColumn(walkerContext.Offset + executionContext.Offset);
 			}),
 		};
 	}
