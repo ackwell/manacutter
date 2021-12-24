@@ -136,11 +136,11 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 		return nodeGraphType;
 	}
 
-	public override FieldType VisitReference(ReferenceNode node, FieldBuilderContext context) {
+	public override FieldType VisitReference(ReferenceNode node, FieldBuilderContext walkerContext) {
 		// TODO: should probably use a direct ref type if ony one target
 		// TODO: This name generation is common, should probably generalise it
 		var union = new UnionGraphType() {
-			Name = $"{string.Join('_', context.Path.Select(part => part.Pascalize()))}_UnionTest",
+			Name = $"{string.Join('_', walkerContext.Path.Select(part => part.Pascalize()))}_UnionTest",
 		};
 
 		// TODO: need to standardise sheet name -> type name generation for xrefs
@@ -151,7 +151,7 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 		}
 
 		return new FieldType() {
-			Name = context.Path.Last(),
+			Name = walkerContext.Path.Last(),
 			ResolvedType = union,
 			Resolver = new FuncFieldResolver<object>(context => {
 				// TODO: quite a lot of this is going to be shared with RESTBuilder, work out how much can be combined. for now, comments on logic are over there.
@@ -161,7 +161,7 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 					return null;
 				}
 
-				var targetRowId = Convert.ToInt32(executionContext.Row.ReadColumn(executionContext.Offset));
+				var targetRowId = Convert.ToInt32(executionContext.Row.ReadColumn(walkerContext.Offset + executionContext.Offset));
 
 				// TODO: do we need depth checks, given this is GQL and ergo lazy?
 				// TODO: should this be null?
@@ -176,25 +176,35 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 						var condition = target.Condition;
 
 						if (!conditionFieldCache.TryGetValue(condition.Field, out var value)) {
-							//value = Convert.ToUInt32()
-							//conditionFieldCache[condition.Field] = value;
+							value = Convert.ToUInt32(this.GetFieldValue(walkerContext, context, condition.Field));
+							conditionFieldCache[condition.Field] = value;
+						}
+
+						if (value != condition.Value) {
+							continue;
 						}
 					}
+
+					var sheetReader = this.reader.GetSheet(target.Sheet);
+					if (sheetReader is null) { continue; }
+
+					if (target.Field is not null) {
+						throw new NotImplementedException();
+					}
+
+					// TODO: subrows
+
+					var rowReader = sheetReader.GetRow((uint)targetRowId);
+					if (rowReader is null) { continue; }
+
+					return executionContext with {
+						Row = rowReader,
+						GraphNodeName = target.Sheet,
+						Offset = 0,
+					};
 				}
 
-				// TODO: this needs conditional handling. also, like, all targets and shit
-
-				var sheetReader = this.reader.GetSheet(node.Targets.First().Sheet);
-				var rowReader = sheetReader?.GetRow((uint)targetRowId);
-				if (rowReader is null) {
-					// TODO
-					return null;
-				}
-
-				return executionContext with {
-					Row = rowReader,
-					Offset = 0,
-				};
+				return null;
 			}),
 		};
 	}
@@ -284,5 +294,27 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 				return executionContext.Row?.ReadColumn(walkerContext.Offset + executionContext.Offset);
 			}),
 		};
+	}
+
+	private object? GetFieldValue(FieldBuilderContext walkerContext, IResolveFieldContext resolveContext, string field) {
+		IResolveFieldContext? resolveParent = resolveContext;
+		foreach (var walkerParent in walkerContext.EnumerateAncestors()) {
+			if (walkerParent.Node is not StructNode node || !node.Fields.ContainsKey(field)) {
+				resolveParent = resolveParent?.Parent;
+				continue;
+			}
+
+			if (resolveParent is null) {
+				break;
+			}
+
+			var executionParent = (ExecutionContext)resolveParent.Source!;
+
+			var offset = walkerParent.Offset + executionParent.Offset + node.Fields[field].Offset;
+			// TODO: We're using the immediate context for the row info which doesn't seem super stable... look into why using parent fails.
+			return ((ExecutionContext)resolveContext.Source!).Row?.ReadColumn(offset);
+		}
+
+		return null;
 	}
 }
