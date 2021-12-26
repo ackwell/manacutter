@@ -37,6 +37,8 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 
 	private readonly IReader reader;
 
+	private Dictionary<string, IObjectGraphType> sheetRowsTypeCache = new();
+
 	public FieldBuilder(
 		IReader reader
 	) : base() {
@@ -96,7 +98,8 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 		}) {
 			Name = graphType.Name,
 			IsTypeOf = input => {
-				var execContext = (ExecutionContext)input;
+				var execContext = input as ExecutionContext;
+				if (execContext is null) { return false; }
 				// The graph node name is only used when resolving node types - if it's not set, we arrived here through other means that we can assume are correct.
 				if (execContext.GraphNodeName is null) { return true; }
 				return graphType.Name == execContext.GraphNodeName;
@@ -143,11 +146,13 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 			Name = $"{string.Join('_', walkerContext.Path.Select(part => part.Pascalize()))}_UnionTest",
 		};
 
-		// TODO: need to standardise sheet name -> type name generation for xrefs
-		// TODO: work out how we're handling target sheets with subrows
-
 		foreach (var target in node.Targets) {
-			union.AddPossibleType(new GraphQLTypeReference(SanitizeName(target.Sheet).Pascalize()));
+			var sheetReader = this.reader.GetSheet(target.Sheet);
+			if (sheetReader == null) { continue; }
+
+			union.AddPossibleType(sheetReader.HasSubrows
+				? this.BuildSheetRowsType(target.Sheet)
+				: new GraphQLTypeReference(SanitizeName(target.Sheet).Pascalize()));
 		}
 
 		return new FieldType() {
@@ -192,14 +197,28 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 						throw new NotImplementedException();
 					}
 
-					// TODO: subrows
+					if (sheetReader.HasSubrows) {
+						var subRows = sheetReader.EnumerateRows((uint)targetRowId, null)
+							.TakeWhile(reader => reader.RowID == targetRowId)
+							.Select(reader => executionContext with { 
+								Row = reader,
+								GraphNodeName = SanitizeName(target.Sheet).Pascalize(),
+								Offset = 0,
+							});
+
+						if (!subRows.Any()) {
+							continue;
+						}
+
+						return subRows;
+					}
 
 					var rowReader = sheetReader.GetRow((uint)targetRowId);
 					if (rowReader is null) { continue; }
 
 					return executionContext with {
 						Row = rowReader,
-						GraphNodeName = target.Sheet,
+						GraphNodeName = SanitizeName(target.Sheet).Pascalize(),
 						Offset = 0,
 					};
 				}
@@ -294,6 +313,37 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 				return executionContext.Row?.ReadColumn(walkerContext.Offset + executionContext.Offset);
 			}),
 		};
+	}
+
+	private IObjectGraphType BuildSheetRowsType(string sheet) {
+		if (this.sheetRowsTypeCache.TryGetValue(sheet, out var graphType)) {
+			// TODO: should this be a reference?
+			return graphType;
+		}
+
+		// TODO: need to standardise sheet name -> type name generation for xrefs
+		var sheetTypeName = SanitizeName(sheet).Pascalize();
+
+		// NOTE: If we start getting a lot of references with large subrow counts, deprecate this in favor of using a connection type.
+		graphType = new ObjectGraphType() {
+			Name = $"{sheetTypeName}Rows",
+			IsTypeOf = input => {
+				var executionContexts = input as IEnumerable<ExecutionContext>;
+				if (executionContexts is null) { return false; }
+				var something = executionContexts.First();
+				return something.GraphNodeName == sheetTypeName;
+			}
+		};
+
+		graphType.AddField(new FieldType() {
+			Name = "rows",
+			ResolvedType = new ListGraphType(new GraphQLTypeReference(sheetTypeName)),
+			Resolver = new FuncFieldResolver<object>(context => context.Source)
+		});
+
+		this.sheetRowsTypeCache[sheet] = graphType;
+
+		return graphType;
 	}
 
 	private object? GetFieldValue(FieldBuilderContext walkerContext, IResolveFieldContext resolveContext, string field) {
