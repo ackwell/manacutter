@@ -140,92 +140,9 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 	}
 
 	public override FieldType VisitReference(ReferenceNode node, FieldBuilderContext walkerContext) {
-		// TODO: should probably use a direct ref type if ony one target
-		// TODO: This name generation is common, should probably generalise it
-		var union = new UnionGraphType() {
-			Name = $"{string.Join('_', walkerContext.Path.Select(part => part.Pascalize()))}_UnionTest",
-		};
-
-		foreach (var target in node.Targets) {
-			var sheetReader = this.reader.GetSheet(target.Sheet);
-			if (sheetReader == null) { continue; }
-
-			union.AddPossibleType(sheetReader.HasSubrows
-				? this.BuildSheetRowsType(target.Sheet)
-				: new GraphQLTypeReference(SanitizeName(target.Sheet).Pascalize()));
-		}
-
-		return new FieldType() {
-			Name = walkerContext.Path.Last(),
-			ResolvedType = union,
-			Resolver = new FuncFieldResolver<object>(context => {
-				// TODO: quite a lot of this is going to be shared with RESTBuilder, work out how much can be combined. for now, comments on logic are over there.
-
-				var executionContext = (ExecutionContext)context.Source!;
-				if (executionContext.Row is null) {
-					return null;
-				}
-
-				var targetRowId = Convert.ToInt32(executionContext.Row.ReadColumn(walkerContext.Offset + executionContext.Offset));
-
-				// TODO: do we need depth checks, given this is GQL and ergo lazy?
-				// TODO: should this be null?
-				if (targetRowId < 0) {
-					return null;
-				}
-
-				var conditionFieldCache = new Dictionary<string, uint>();
-
-				foreach (var target in node.Targets) {
-					if (target.Condition is not null) {
-						var condition = target.Condition;
-
-						if (!conditionFieldCache.TryGetValue(condition.Field, out var value)) {
-							value = Convert.ToUInt32(this.GetFieldValue(walkerContext, context, condition.Field));
-							conditionFieldCache[condition.Field] = value;
-						}
-
-						if (value != condition.Value) {
-							continue;
-						}
-					}
-
-					var sheetReader = this.reader.GetSheet(target.Sheet);
-					if (sheetReader is null) { continue; }
-
-					if (target.Field is not null) {
-						throw new NotImplementedException();
-					}
-
-					if (sheetReader.HasSubrows) {
-						var subRows = sheetReader.EnumerateRows((uint)targetRowId, null)
-							.TakeWhile(reader => reader.RowID == targetRowId)
-							.Select(reader => executionContext with { 
-								Row = reader,
-								GraphNodeName = SanitizeName(target.Sheet).Pascalize(),
-								Offset = 0,
-							});
-
-						if (!subRows.Any()) {
-							continue;
-						}
-
-						return subRows;
-					}
-
-					var rowReader = sheetReader.GetRow((uint)targetRowId);
-					if (rowReader is null) { continue; }
-
-					return executionContext with {
-						Row = rowReader,
-						GraphNodeName = SanitizeName(target.Sheet).Pascalize(),
-						Offset = 0,
-					};
-				}
-
-				return null;
-			}),
-		};
+		return node.Targets.Count() > 1
+			? this.BuildReferenceUnionField(node.Targets, walkerContext)
+			: this.BuildReferenceTargetField(node.Targets.First(), walkerContext);
 	}
 
 	public override FieldType VisitStruct(StructNode node, FieldBuilderContext walkerContext) {
@@ -315,7 +232,80 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 		};
 	}
 
-	private IObjectGraphType BuildSheetRowsType(string sheet) {
+	private FieldType BuildReferenceUnionField(IEnumerable<ReferenceTarget> targets, FieldBuilderContext walkerContext) {
+		// TODO: should probably use a direct ref type if ony one target
+		// TODO: This name generation is common, should probably generalise it
+		var union = new UnionGraphType() {
+			Name = $"{string.Join('_', walkerContext.Path.Select(part => part.Pascalize()))}_UnionTest",
+		};
+
+		foreach (var target in targets) {
+			var targetType = this.BuildReferenceTargetType(target.Sheet);
+			if (targetType == null) { continue; }
+			union.AddPossibleType(targetType);
+		}
+
+		return new FieldType() {
+			Name = walkerContext.Path.Last(),
+			ResolvedType = union,
+			Resolver = new FuncFieldResolver<object>(context => {
+				// TODO: quite a lot of this is going to be shared with RESTBuilder, work out how much can be combined. for now, comments on logic are over there.
+
+				var executionContext = (ExecutionContext)context.Source!;
+				if (executionContext.Row is null) {
+					return null;
+				}
+
+				var targetRowId = Convert.ToInt32(executionContext.Row.ReadColumn(walkerContext.Offset + executionContext.Offset));
+
+				// TODO: do we need depth checks, given this is GQL and ergo lazy?
+				// TODO: should this be null?
+				if (targetRowId < 0) {
+					return null;
+				}
+
+				var conditionFieldCache = new Dictionary<string, uint>();
+
+				foreach (var target in targets) {
+					var result = this.ResolveReferenceTarget((uint)targetRowId, target, walkerContext, context, conditionFieldCache);
+					if (result is not null) {
+						return result;
+					}
+				}
+
+				return null;
+			}),
+		};
+	}
+
+	private FieldType BuildReferenceTargetField(ReferenceTarget target, FieldBuilderContext walkerContext) {
+		return new FieldType() {
+			Name = walkerContext.Path.Last(),
+			ResolvedType = this.BuildReferenceTargetType(target.Sheet),
+			Resolver = new FuncFieldResolver<object>(context => {
+				var executionContext = (ExecutionContext)context.Source!;
+				if (executionContext.Row is null) {
+					return null;
+				}
+
+				var targetRowId = Convert.ToInt32(executionContext.Row.ReadColumn(walkerContext.Offset + executionContext.Offset));
+				if (targetRowId < 0) {
+					return null;
+				}
+
+				return this.ResolveReferenceTarget((uint)targetRowId, target, walkerContext, context);
+			}),
+		};
+	}
+
+	private IObjectGraphType? BuildReferenceTargetType(string sheet) {
+		var sheetReader = this.reader.GetSheet(sheet);
+		if (sheetReader == null) { return null; }
+
+		if (!sheetReader.HasSubrows) {
+			return new GraphQLTypeReference(SanitizeName(sheet).Pascalize());
+		}
+
 		if (this.sheetRowsTypeCache.TryGetValue(sheet, out var graphType)) {
 			// TODO: should this be a reference?
 			return graphType;
@@ -344,6 +334,57 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 		this.sheetRowsTypeCache[sheet] = graphType;
 
 		return graphType;
+	}
+
+	private object? ResolveReferenceTarget(
+		uint targetRowId,
+		ReferenceTarget target,
+		FieldBuilderContext walkerContext,
+		IResolveFieldContext resolveContext,
+		Dictionary<string, uint>? conditionFieldCache = null
+	) {
+		if (target.Condition is not null) {
+			var condition = target.Condition;
+
+			if (conditionFieldCache?.TryGetValue(condition.Field, out var value) is null or false) {
+				value = Convert.ToUInt32(this.GetFieldValue(walkerContext, resolveContext, condition.Field));
+				conditionFieldCache?.Add(condition.Field, value);
+			}
+
+			if (value != condition.Value) {
+				return null;
+			}
+		}
+
+		var sheetReader = this.reader.GetSheet(target.Sheet);
+		if (sheetReader is null) { return null; }
+
+		if (target.Field is not null) {
+			throw new NotImplementedException();
+		}
+
+		var executionContext = (ExecutionContext)resolveContext.Source!;
+
+		if (sheetReader.HasSubrows) {
+			var subRows = sheetReader.EnumerateRows(targetRowId, null)
+				.TakeWhile(reader => reader.RowID == targetRowId)
+				.Select(reader => executionContext with {
+					Row = reader,
+					GraphNodeName = SanitizeName(target.Sheet).Pascalize(),
+					Offset = 0,
+				});
+
+			return subRows.Any() ? subRows : null;
+		}
+
+		var rowReader = sheetReader.GetRow(targetRowId);
+		if (rowReader is null) { return null; }
+
+		return executionContext with {
+			Row = rowReader,
+			GraphNodeName = SanitizeName(target.Sheet).Pascalize(),
+			Offset = 0,
+		};
 	}
 
 	private object? GetFieldValue(FieldBuilderContext walkerContext, IResolveFieldContext resolveContext, string field) {
