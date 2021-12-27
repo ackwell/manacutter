@@ -14,10 +14,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="GraphQL" Version="4.6.0" />
+		<PackageReference Include="GraphQL" Version="4.6.1" />
 		<PackageReference Include="GraphQL.Relay" Version="0.6.2" />
-		<PackageReference Include="GraphQL.SystemTextJson" Version="4.6.0" />
-		<PackageReference Include="Humanizer.Core" Version="2.11.10" />
+		<PackageReference Include="GraphQL.SystemTextJson" Version="4.6.1" />
+		<PackageReference Include="Humanizer.Core" Version="2.13.14" />
 	</ItemGroup>
 
 	<ItemGroup>
