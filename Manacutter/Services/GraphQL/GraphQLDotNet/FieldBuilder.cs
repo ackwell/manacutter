@@ -233,10 +233,9 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 	}
 
 	private FieldType BuildReferenceUnionField(IEnumerable<ReferenceTarget> targets, FieldBuilderContext walkerContext) {
-		// TODO: should probably use a direct ref type if ony one target
 		// TODO: This name generation is common, should probably generalise it
 		var union = new UnionGraphType() {
-			Name = $"{string.Join('_', walkerContext.Path.Select(part => part.Pascalize()))}_UnionTest",
+			Name = $"{string.Join('_', walkerContext.Path.Select(part => part.Pascalize()))}",
 		};
 
 		foreach (var target in targets) {
@@ -307,7 +306,6 @@ public class FieldBuilder : SchemaWalker<FieldBuilderContext, FieldType> {
 		}
 
 		if (this.sheetRowsTypeCache.TryGetValue(sheet, out var graphType)) {
-			// TODO: should this be a reference?
 			return graphType;
 		}
 
